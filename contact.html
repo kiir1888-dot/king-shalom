@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contact | News Portfolio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/responsive.css" />
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg shadow-sm sticky-top">
+      <div class="container">
+        <a class="navbar-brand fw-bold d-flex align-items-center" href="index.html">
+          <img class="brand-logo" src="images/team/King`s Shalom logo.jpg" alt="King's Shalom logo" />
+          <span>NewsPort</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+            <li class="nav-item"><a class="nav-link" href="news.html">Latest News</a></li>
+            <li class="nav-item"><a class="nav-link" href="categories.html">Categories</a></li>
+            <li class="nav-item"><a class="nav-link" href="about.html">About</a></li>
+            <li class="nav-item"><a class="nav-link" href="team.html">Team</a></li>
+            <li class="nav-item"><a class="nav-link" href="gallery.html">Gallery</a></li>
+            <li class="nav-item"><a class="nav-link active" aria-current="page" href="contact.html">Contact</a></li>
+          </ul>
+          <div class="d-flex align-items-center gap-2">
+            <a href="#" class="btn btn-link text-muted" aria-label="Search"><i class="fa-solid fa-magnifying-glass"></i></a>
+            <button class="btn btn-link text-muted" id="themeToggle" aria-label="Toggle dark mode"><i class="fa-solid fa-moon"></i></button>
+            <a href="admin-login.html" class="btn btn-outline-dark btn-sm"><i class="fa-solid fa-lock"></i> Admin</a>
+            <a href="#" class="social-link"><i class="fa-brands fa-facebook-f"></i></a>
+            <a href="#" class="social-link"><i class="fa-brands fa-twitter"></i></a>
+            <a href="#" class="social-link"><i class="fa-brands fa-instagram"></i></a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <main class="py-4 py-md-5">
+      <div class="container">
+        <div class="page-shell p-4 p-md-5">
+          <div class="mb-4">
+            <p class="eyebrow mb-2">Get in touch</p>
+            <h1 class="display-6 fw-semibold mb-2">We’d love to hear from you</h1>
+            <p class="text-muted mb-0">Reach out for editorial inquiries, partnerships, or general questions about the newsroom.</p>
+          </div>
+
+          <div class="row g-4">
+            <div class="col-lg-7">
+              <div class="info-card p-4 h-100">
+                <h3 class="h4 fw-semibold mb-3">Send a message</h3>
+                <form
+                  class="contact-form"
+                  action="https://api.web3forms.com/submit"
+                  method="POST"
+                >
+                  <input type="hidden" name="access_key" value="b95f86b3-8108-401c-b5fe-eea5201c8f23" />
+                  <input type="hidden" name="subject" value="New inquiry from King's Shalom website" />
+
+                  <div class="form-field">
+                    <label class="form-label" for="contact-name">Name</label>
+                    <input
+                      class="form-control"
+                      id="contact-name"
+                      name="name"
+                      type="text"
+                      placeholder="Your full name"
+                      autocomplete="name"
+                      minlength="2"
+                      maxlength="100"
+                      required
+                    />
+                  </div>
+
+                  <div class="form-field">
+                    <label class="form-label" for="contact-email">Email</label>
+                    <input
+                      class="form-control"
+                      id="contact-email"
+                      name="email"
+                      type="email"
+                      placeholder="you@example.com"
+                      autocomplete="email"
+                      inputmode="email"
+                      required
+                    />
+                  </div>
+
+                  <div class="form-field">
+                    <label class="form-label" for="contact-message">Message</label>
+                    <textarea
+                      class="form-control"
+                      id="contact-message"
+                      name="message"
+                      rows="5"
+                      placeholder="Tell us how we can help"
+                      minlength="10"
+                      maxlength="2000"
+                      required
+                    ></textarea>
+                  </div>
+
+                  <div class="form-actions">
+                    <button class="btn btn-primary contact-form__submit" type="submit">
+                      Send message
+                    </button>
+                    <p class="form-note">Messages are delivered securely through your form service endpoint.</p>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <div class="col-lg-5">
+              <div class="info-card p-4 mb-4">
+                <h3 class="h4 fw-semibold mb-3">Visit us</h3>
+                <p class="text-muted mb-3"><i class="fa-solid fa-location-dot me-2 text-accent"></i> Hai Amarat, Airport Road, Juba City</p>
+                <p class="text-muted mb-3"><i class="fa-solid fa-phone me-2 text-accent"></i> +211929150111</p>
+                <p class="text-muted mb-3"><i class="fa-solid fa-envelope me-2 text-accent"></i> Kuothassan5@gmail.com</p>
+                <div class="d-flex gap-3 mt-3">
+                  <a href="#" class="social-link"><i class="fa-brands fa-facebook-f"></i></a>
+                  <a href="#" class="social-link"><i class="fa-brands fa-twitter"></i></a>
+                  <a href="#" class="social-link"><i class="fa-brands fa-instagram"></i></a>
+                  <a href="#" class="social-link"><i class="fa-brands fa-linkedin-in"></i></a>
+                </div>
+              </div>
+
+              <div class="info-card p-4 mb-4">
+                <h3 class="h5 fw-semibold mb-3">Business hours</h3>
+                <ul class="list-unstyled mb-0 text-muted">
+                  <li>Mon – Fri: 9:00 AM – 6:00 PM</li>
+                  <li>Saturday: 10:00 AM – 2:00 PM</li>
+                  <li>Sunday: Closed</li>
+                </ul>
+              </div>
+
+              <div class="map-placeholder">
+                <p class="mb-0">Google Maps Placeholder</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="js/main.js"></script>
+  </body>
+</html>

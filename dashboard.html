@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>King's Shalom Dashboard</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 0; background: #f5f7fa; color: #222; }
+      .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+      .card { background: white; border-radius: 16px; padding: 1.25rem; box-shadow: 0 12px 30px rgba(0,0,0,0.08); margin-bottom: 1rem; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { padding: 0.85rem; border-bottom: 1px solid #ececec; text-align: left; }
+      th { background: #0A2E5D; color: white; }
+      .badge { display: inline-block; padding: 0.3rem 0.65rem; border-radius: 999px; background: #F4B400; color: #0A2E5D; font-size: 0.82rem; font-weight: 700; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="card">
+        <h1>King's Shalom Inquiry Dashboard</h1>
+        <p>All requests submitted through the contact form appear here.</p>
+      </div>
+      <div class="card">
+        <table id="messagesTable">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Service</th>
+              <th>Message</th>
+              <th>Received</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      const token = localStorage.getItem('adminToken');
+      if (!token) {
+        window.location.href = '/admin-login.html';
+      }
+
+      fetch('/api/contact/messages', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+        .then(async (res) => {
+          if (res.status === 401 || res.status === 403) {
+            localStorage.removeItem('adminToken');
+            window.location.href = '/admin-login.html';
+            throw new Error('Unauthorized');
+          }
+          return res.json();
+        })
+        .then((messages) => {
+          const tbody = document.querySelector('#messagesTable tbody');
+          if (!messages.length) {
+            tbody.innerHTML = '<tr><td colspan="6">No inquiries yet.</td></tr>';
+            return;
+          }
+
+          tbody.innerHTML = messages.map((item) => `
+            <tr>
+              <td>${item.name}</td>
+              <td>${item.email}</td>
+              <td>${item.phone || '—'}</td>
+              <td><span class="badge">${item.service || 'General'}</span></td>
+              <td>${item.message}</td>
+              <td>${new Date(item.createdAt).toLocaleString()}</td>
+            </tr>
+          `).join('');
+        })
+        .catch((error) => {
+          if (error.message === 'Unauthorized') {
+            return;
+          }
+
+          const tbody = document.querySelector('#messagesTable tbody');
+          tbody.innerHTML = '<tr><td colspan="6">Unable to load inquiries.</td></tr>';
+        });
+    </script>
+  </body>
+</html>
