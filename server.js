@@ -6,7 +6,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
-import sqlite3 from 'sqlite3';
 import { createClient } from '@supabase/supabase-js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -18,6 +17,7 @@ const IS_VERCEL = Boolean(process.env.VERCEL);
 const DATA_DIR = IS_VERCEL ? path.join('/tmp', 'king-shalom-data') : path.join(__dirname, 'data');
 const DATA_FILE = path.join(DATA_DIR, 'contacts.json');
 const DB_FILE = path.join(DATA_DIR, 'news.db');
+const NEWS_FILE = path.join(DATA_DIR, 'news.json');
 const DASHBOARD_FILE = path.join(__dirname, 'dashboard.html');
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 const SESSION_TTL_SECONDS = Number(process.env.ADMIN_SESSION_TTL_SECONDS || 60 * 60 * 8);
@@ -26,6 +26,21 @@ const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toSt
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
+
+const ensureNewsFile = () => {
+  if (!fs.existsSync(NEWS_FILE)) {
+    fs.writeFileSync(NEWS_FILE, JSON.stringify([], null, 2));
+  }
+};
+
+const loadNewsFromFile = () => {
+  ensureNewsFile();
+  return JSON.parse(fs.readFileSync(NEWS_FILE, 'utf8'));
+};
+
+const saveNewsToFile = (items) => {
+  fs.writeFileSync(NEWS_FILE, JSON.stringify(items, null, 2));
+};
 
 const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 
@@ -133,6 +148,10 @@ const requireAdminAuth = (req, res, next) => {
 };
 
 const requireNewsTableColumns = () => {
+  if (!db) {
+    return;
+  }
+
   db.all('PRAGMA table_info(news)', (err, columns) => {
     if (err) {
       console.error('Error inspecting news table:', err.message);
@@ -176,17 +195,14 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: process.env.JSON_LIMIT || '15mb' }));
 app.use(express.urlencoded({ extended: true, limit: process.env.URLENCODED_LIMIT || '15mb' }));
 
-// Initialize SQLite database
-const db = new sqlite3.Database(DB_FILE, (err) => {
-  if (err) {
-    console.error('Database error:', err.message);
-  } else {
-    console.log('Connected to SQLite database');
-    initializeDatabase();
-  }
-});
+let db = null;
+let sqliteAvailable = false;
 
-function initializeDatabase() {
+const initializeSQLiteDatabase = () => {
+  if (!sqliteAvailable || !db) {
+    return;
+  }
+
   db.run(`
     CREATE TABLE IF NOT EXISTS news (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -207,7 +223,35 @@ function initializeDatabase() {
       requireNewsTableColumns();
     }
   });
-}
+};
+
+const initializeNewsStorage = async () => {
+  if (IS_VERCEL) {
+    ensureNewsFile();
+    console.log('Using JSON file storage for news on Vercel runtime');
+    return;
+  }
+
+  try {
+    const sqliteModule = await import('sqlite3');
+    const sqlite3 = sqliteModule.default;
+    db = new sqlite3.Database(DB_FILE, (err) => {
+      if (err) {
+        console.error('Database error:', err.message);
+        ensureNewsFile();
+      } else {
+        sqliteAvailable = true;
+        console.log('Connected to SQLite database');
+        initializeSQLiteDatabase();
+      }
+    });
+  } catch (error) {
+    console.warn('SQLite unavailable, using JSON file storage for news:', error.message);
+    ensureNewsFile();
+  }
+};
+
+await initializeNewsStorage();
 
 const ensureDataFile = () => {
   const dir = path.dirname(DATA_FILE);
@@ -293,6 +337,11 @@ app.get('/api/contact/messages', requireAdminAuth, (req, res) => {
 
 // GET all news
 app.get('/api/news', (req, res) => {
+  if (!sqliteAvailable || !db) {
+    const items = loadNewsFromFile().sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return res.json({ success: true, data: items });
+  }
+
   db.all('SELECT * FROM news ORDER BY createdAt DESC', (err, rows) => {
     if (err) {
       return res.status(500).json({ success: false, message: err.message });
@@ -308,6 +357,27 @@ app.post('/api/news', requireAdminAuth, (req, res) => {
   
   if (!title || !description || !category || !author || !date) {
     return res.status(400).json({ success: false, message: 'Missing required fields' });
+  }
+
+  if (!sqliteAvailable || !db) {
+    const items = loadNewsFromFile();
+    const now = new Date().toISOString();
+    const nextId = items.length ? Math.max(...items.map((item) => Number(item.id) || 0)) + 1 : 1;
+    const record = {
+      id: nextId,
+      title,
+      description,
+      category,
+      author,
+      date,
+      imageUrl: imageUrl || '',
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    items.unshift(record);
+    saveNewsToFile(items);
+    return res.json({ success: true, message: 'News added', id: nextId });
   }
 
   db.run(
@@ -332,6 +402,30 @@ app.put('/api/news/:id', requireAdminAuth, (req, res) => {
     return res.status(400).json({ success: false, message: 'Missing required fields' });
   }
 
+  if (!sqliteAvailable || !db) {
+    const items = loadNewsFromFile();
+    const targetId = String(id);
+    const index = items.findIndex((item) => String(item.id) === targetId);
+
+    if (index === -1) {
+      return res.status(404).json({ success: false, message: 'News item not found' });
+    }
+
+    items[index] = {
+      ...items[index],
+      title,
+      description,
+      category,
+      author,
+      date,
+      imageUrl: imageUrl || '',
+      updatedAt: new Date().toISOString(),
+    };
+
+    saveNewsToFile(items);
+    return res.json({ success: true, message: 'News updated' });
+  }
+
   db.run(
     'UPDATE news SET title=?, description=?, category=?, author=?, date=?, imageUrl=?, updatedAt=CURRENT_TIMESTAMP WHERE id=?',
     [title, description, category, author, date, imageUrl || '', id],
@@ -348,6 +442,19 @@ app.put('/api/news/:id', requireAdminAuth, (req, res) => {
 app.delete('/api/news/:id', requireAdminAuth, (req, res) => {
 
   const { id } = req.params;
+
+  if (!sqliteAvailable || !db) {
+    const items = loadNewsFromFile();
+    const filtered = items.filter((item) => String(item.id) !== String(id));
+
+    if (filtered.length === items.length) {
+      return res.status(404).json({ success: false, message: 'News item not found' });
+    }
+
+    saveNewsToFile(filtered);
+    return res.json({ success: true, message: 'News deleted' });
+  }
+
   db.run('DELETE FROM news WHERE id=?', [id], function(err) {
     if (err) {
       return res.status(500).json({ success: false, message: err.message });
