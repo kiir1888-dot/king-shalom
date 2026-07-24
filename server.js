@@ -14,8 +14,10 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const DATA_FILE = path.join(__dirname, 'data', 'contacts.json');
-const DB_FILE = path.join(__dirname, 'data', 'news.db');
+const IS_VERCEL = Boolean(process.env.VERCEL);
+const DATA_DIR = IS_VERCEL ? path.join('/tmp', 'king-shalom-data') : path.join(__dirname, 'data');
+const DATA_FILE = path.join(DATA_DIR, 'contacts.json');
+const DB_FILE = path.join(DATA_DIR, 'news.db');
 const DASHBOARD_FILE = path.join(__dirname, 'dashboard.html');
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 const SESSION_TTL_SECONDS = Number(process.env.ADMIN_SESSION_TTL_SECONDS || 60 * 60 * 8);
@@ -424,6 +426,10 @@ app.use((req, res) => {
   res.status(404).sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`King's Shalom server running on http://localhost:${PORT}`);
-});
+if (!IS_VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`King's Shalom server running on http://localhost:${PORT}`);
+  });
+}
+
+export default app;
