@@ -23,6 +23,10 @@ const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 const SESSION_TTL_SECONDS = Number(process.env.ADMIN_SESSION_TTL_SECONDS || 60 * 60 * 8);
 const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('base64url');
 
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
 const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 
 const ADMIN_OWNER_EMAIL = normalizeEmail(process.env.ADMIN_OWNER_EMAIL);
