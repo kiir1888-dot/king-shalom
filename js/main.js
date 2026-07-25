@@ -140,13 +140,18 @@ const toggleFaq = (clickedItem) => {
   });
 };
 
-const removeMobileMenuOverlay = () => {
-  document.querySelectorAll('.menu-overlay, .mobile-menu-overlay, .sidebar-overlay, .mobile-backdrop, .backdrop-overlay, .offcanvas-backdrop').forEach((overlay) => {
-    overlay.classList.remove('open', 'active', 'show');
-    if (overlay.classList.contains('offcanvas-backdrop')) {
-      overlay.remove();
-    }
-  });
+const closeMobileNavigation = () => {
+  const mobileNavigation = document.getElementById('navbarNav');
+  if (!mobileNavigation?.classList.contains('show') || window.innerWidth >= 992) {
+    return;
+  }
+
+  if (window.bootstrap?.Collapse) {
+    window.bootstrap.Collapse.getOrCreateInstance(mobileNavigation, { toggle: false }).hide();
+  } else {
+    mobileNavigation.classList.remove('show');
+    document.querySelector('[data-bs-target="#navbarNav"]')?.setAttribute('aria-expanded', 'false');
+  }
 };
 
 faqItems.forEach((item) => {
@@ -154,13 +159,13 @@ faqItems.forEach((item) => {
 });
 
 document.querySelectorAll('#navbarNav .nav-link').forEach((item) => {
-  item.addEventListener('click', removeMobileMenuOverlay);
+  item.addEventListener('click', closeMobileNavigation);
 });
 
 document.addEventListener('click', (event) => {
   const clickedTextMenuItem = event.target.closest('.mobile-menu-item, .sidebar-menu-item, .menu-item-text, [data-nav-target], [data-scroll-target]');
   if (clickedTextMenuItem) {
-    removeMobileMenuOverlay();
+    closeMobileNavigation();
   }
 });
 
