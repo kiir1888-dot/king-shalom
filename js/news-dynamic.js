@@ -1,7 +1,7 @@
 // Fetch news from backend API
 async function fetchNewsData() {
   try {
-    const response = await fetch('/api/news');
+    const response = await fetch('/api/news', { cache: 'no-store' });
     const contentType = response.headers.get('content-type') || '';
     if (!contentType.includes('application/json')) {
       console.error('Server returned HTML instead of JSON. Ensure backend is running.');

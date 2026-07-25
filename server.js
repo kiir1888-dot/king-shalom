@@ -365,6 +365,12 @@ app.get('/api/contact/messages', requireAdminAuth, (req, res) => {
 
 // GET all news
 app.get('/api/news', async (req, res) => {
+  res.set({
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    'CDN-Cache-Control': 'no-store',
+    'Vercel-CDN-Cache-Control': 'no-store',
+  });
+
   if (IS_VERCEL) {
     if (!newsSupabase) {
       return res.status(503).json({ success: false, message: 'News storage is not configured.' });
