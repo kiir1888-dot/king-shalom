@@ -44,6 +44,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Form submission
   document.getElementById('newsForm').addEventListener('submit', handleFormSubmit);
+  document.getElementById('cancelBtn').addEventListener('click', resetForm);
+  document.getElementById('logoutBtn').addEventListener('click', logout);
+  document.getElementById('newsList').addEventListener('click', handleNewsListClick);
 });
 
 let editingId = null;
@@ -189,12 +192,26 @@ function renderNewsList() {
         </div>
       </div>
       <div class="news-item-actions">
-        <button class="btn-edit" onclick="editNews(${news.id})">Edit</button>
-        <button class="btn-delete" onclick="deleteNews(${news.id})">Delete</button>
+        <button type="button" class="btn-edit" data-action="edit" data-news-id="${news.id}">Edit</button>
+        <button type="button" class="btn-delete" data-action="delete" data-news-id="${news.id}">Delete</button>
       </div>
     `;
     newsList.appendChild(newsItem);
   });
+}
+
+function handleNewsListClick(event) {
+  const actionButton = event.target.closest('[data-action][data-news-id]');
+  if (!actionButton) {
+    return;
+  }
+
+  const id = Number(actionButton.dataset.newsId);
+  if (actionButton.dataset.action === 'edit') {
+    editNews(id);
+  } else if (actionButton.dataset.action === 'delete') {
+    deleteNews(id);
+  }
 }
 
 // Handle form submission
@@ -208,17 +225,23 @@ async function handleFormSubmit(e) {
   const author = document.getElementById('author').value;
   const date = document.getElementById('date').value;
 
-  let imageUrl = currentImageUrl;
-  if (selectedImageFile) {
-    imageUrl = await readFileAsDataUrl(selectedImageFile);
-  }
-
   const method = editingId ? 'PUT' : 'POST';
   const url = editingId 
     ? `${API_BASE}/news/${editingId}` 
     : `${API_BASE}/news`;
+  const submitBtn = document.getElementById('submitBtn');
+  const submitBtnText = document.getElementById('submitBtnText');
+  const idleLabel = editingId ? 'Update Article' : 'Publish Article';
 
   try {
+    submitBtn.disabled = true;
+    submitBtnText.textContent = editingId ? 'Updating...' : 'Publishing...';
+
+    let imageUrl = currentImageUrl;
+    if (selectedImageFile) {
+      imageUrl = await readFileAsDataUrl(selectedImageFile);
+    }
+
     const data = await requestJson(url, {
       method: method,
       headers: {
@@ -244,6 +267,9 @@ async function handleFormSubmit(e) {
     loadNews();
   } catch (error) {
     showAlert('Connection error: ' + error.message, 'error');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtnText.textContent = idleLabel;
   }
 }
 
@@ -321,6 +347,6 @@ function resetForm() {
 function logout() {
   if (confirm('Are you sure you want to logout?')) {
     localStorage.removeItem('adminToken');
-    window.location.href = '/admin-login.html';
+    window.location.replace('/admin-login.html');
   }
 }

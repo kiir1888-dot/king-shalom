@@ -143,6 +143,7 @@
         font-size: 0.9rem;
         transition: background 0.3s;
       }
+
       .btn-edit {
         background: #007bff;
         color: white;
@@ -198,7 +199,7 @@
   <body>
     <div class="dashboard-header">
       <h1><i class="fa-solid fa-newspaper"></i> News Management Dashboard</h1>
-      <button class="btn-logout" onclick="logout()">Logout</button>
+      <button id="logoutBtn" type="button" class="btn-logout">Logout</button>
     </div>
 
     <div class="container-admin">
@@ -249,10 +250,10 @@
           </div>
 
           <div class="form-group">
-            <button type="submit" class="btn-primary-admin">
+            <button id="submitBtn" type="submit" class="btn-primary-admin">
               <span id="submitBtnText">Publish Article</span>
             </button>
-            <button type="reset" class="btn-primary-admin" style="background: #6c757d; margin-left: 0.5rem;" onclick="resetForm()">Cancel</button>
+            <button id="cancelBtn" type="button" class="btn-primary-admin" style="background: #6c757d; margin-left: 0.5rem;">Cancel</button>
           </div>
         </form>
       </div>
@@ -262,8 +263,9 @@
         <h2>Published Articles</h2>
         <div id="newsList"></div>
       </div>
+
     </div>
 
-    <script src="js/admin-dashboard.js"></script>
+    <script type="module" src="js/admin-dashboard.js"></script>
   </body>
 </html>

@@ -50,7 +50,9 @@ const allowedAdminEmails = new Set([ADMIN_OWNER_EMAIL, ADMIN_EDITOR_EMAIL].filte
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const hasSupabaseConfig = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+const hasSupabaseNewsConfig = Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
 const hasAllowedAdminEmails = allowedAdminEmails.size === 2;
 const hasAdminAuthConfig = Boolean(hasSupabaseConfig && hasAllowedAdminEmails && SESSION_SECRET);
 
@@ -63,12 +65,37 @@ const supabase = hasSupabaseConfig
     })
   : null;
 
+const newsSupabase = hasSupabaseNewsConfig
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    })
+  : null;
+
+const mapNewsRow = (row) => ({
+  id: row.id,
+  title: row.title,
+  description: row.description,
+  category: row.category,
+  author: row.author,
+  date: row.date,
+  imageUrl: row.image_url || '',
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+});
+
 if (!hasSupabaseConfig) {
   console.warn('[security] SUPABASE_URL and SUPABASE_ANON_KEY must be set for admin authentication.');
 }
 
 if (!hasAllowedAdminEmails) {
   console.warn('[security] ADMIN_OWNER_EMAIL and ADMIN_EDITOR_EMAIL must both be set to exactly two allowed admin users.');
+}
+
+if (IS_VERCEL && !hasSupabaseNewsConfig) {
+  console.warn('[storage] SUPABASE_SERVICE_ROLE_KEY must be set for durable news storage on Vercel.');
 }
 
 if (IS_PRODUCTION && !hasAdminAuthConfig) {
@@ -227,8 +254,9 @@ const initializeSQLiteDatabase = () => {
 
 const initializeNewsStorage = async () => {
   if (IS_VERCEL) {
-    ensureNewsFile();
-    console.log('Using JSON file storage for news on Vercel runtime');
+    console.log(hasSupabaseNewsConfig
+      ? 'Using Supabase storage for news on Vercel runtime'
+      : 'Supabase news storage is not configured on Vercel runtime');
     return;
   }
 
@@ -336,7 +364,24 @@ app.get('/api/contact/messages', requireAdminAuth, (req, res) => {
 // ===== NEWS API ENDPOINTS =====
 
 // GET all news
-app.get('/api/news', (req, res) => {
+app.get('/api/news', async (req, res) => {
+  if (IS_VERCEL) {
+    if (!newsSupabase) {
+      return res.status(503).json({ success: false, message: 'News storage is not configured.' });
+    }
+
+    const { data, error } = await newsSupabase
+      .from('news')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+
+    return res.json({ success: true, data: data.map(mapNewsRow) });
+  }
+
   if (!sqliteAvailable || !db) {
     const items = loadNewsFromFile().sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     return res.json({ success: true, data: items });
@@ -351,12 +396,30 @@ app.get('/api/news', (req, res) => {
 });
 
 // POST new news
-app.post('/api/news', requireAdminAuth, (req, res) => {
+app.post('/api/news', requireAdminAuth, async (req, res) => {
 
   const { title, description, category, author, date, imageUrl } = req.body;
   
   if (!title || !description || !category || !author || !date) {
     return res.status(400).json({ success: false, message: 'Missing required fields' });
+  }
+
+  if (IS_VERCEL) {
+    if (!newsSupabase) {
+      return res.status(503).json({ success: false, message: 'News storage is not configured.' });
+    }
+
+    const { data, error } = await newsSupabase
+      .from('news')
+      .insert({ title, description, category, author, date, image_url: imageUrl || '' })
+      .select('id')
+      .single();
+
+    if (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+
+    return res.json({ success: true, message: 'News added', id: data.id });
   }
 
   if (!sqliteAvailable || !db) {
@@ -393,13 +456,43 @@ app.post('/api/news', requireAdminAuth, (req, res) => {
 });
 
 // PUT update news
-app.put('/api/news/:id', requireAdminAuth, (req, res) => {
+app.put('/api/news/:id', requireAdminAuth, async (req, res) => {
 
   const { id } = req.params;
   const { title, description, category, author, date, imageUrl } = req.body;
   
   if (!title || !description || !category || !author || !date) {
     return res.status(400).json({ success: false, message: 'Missing required fields' });
+  }
+
+  if (IS_VERCEL) {
+    if (!newsSupabase) {
+      return res.status(503).json({ success: false, message: 'News storage is not configured.' });
+    }
+
+    const { data, error } = await newsSupabase
+      .from('news')
+      .update({
+        title,
+        description,
+        category,
+        author,
+        date,
+        image_url: imageUrl || '',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select('id')
+      .maybeSingle();
+
+    if (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+    if (!data) {
+      return res.status(404).json({ success: false, message: 'News item not found' });
+    }
+
+    return res.json({ success: true, message: 'News updated' });
   }
 
   if (!sqliteAvailable || !db) {
@@ -439,9 +532,31 @@ app.put('/api/news/:id', requireAdminAuth, (req, res) => {
 });
 
 // DELETE news
-app.delete('/api/news/:id', requireAdminAuth, (req, res) => {
+app.delete('/api/news/:id', requireAdminAuth, async (req, res) => {
 
   const { id } = req.params;
+
+  if (IS_VERCEL) {
+    if (!newsSupabase) {
+      return res.status(503).json({ success: false, message: 'News storage is not configured.' });
+    }
+
+    const { data, error } = await newsSupabase
+      .from('news')
+      .delete()
+      .eq('id', id)
+      .select('id')
+      .maybeSingle();
+
+    if (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+    if (!data) {
+      return res.status(404).json({ success: false, message: 'News item not found' });
+    }
+
+    return res.json({ success: true, message: 'News deleted' });
+  }
 
   if (!sqliteAvailable || !db) {
     const items = loadNewsFromFile();
