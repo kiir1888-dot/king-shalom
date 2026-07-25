@@ -140,8 +140,28 @@ const toggleFaq = (clickedItem) => {
   });
 };
 
+const removeMobileMenuOverlay = () => {
+  document.querySelectorAll('.menu-overlay, .mobile-menu-overlay, .sidebar-overlay, .mobile-backdrop, .backdrop-overlay, .offcanvas-backdrop').forEach((overlay) => {
+    overlay.classList.remove('open', 'active', 'show');
+    if (overlay.classList.contains('offcanvas-backdrop')) {
+      overlay.remove();
+    }
+  });
+};
+
 faqItems.forEach((item) => {
   item.querySelector('.faq-question')?.addEventListener('click', () => toggleFaq(item));
+});
+
+document.querySelectorAll('#navbarNav .nav-link').forEach((item) => {
+  item.addEventListener('click', removeMobileMenuOverlay);
+});
+
+document.addEventListener('click', (event) => {
+  const clickedTextMenuItem = event.target.closest('.mobile-menu-item, .sidebar-menu-item, .menu-item-text, [data-nav-target], [data-scroll-target]');
+  if (clickedTextMenuItem) {
+    removeMobileMenuOverlay();
+  }
 });
 
 galleryButtons.forEach((button) => {
