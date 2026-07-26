@@ -647,6 +647,17 @@ app.post('/api/admin/forgot-password', async (req, res) => {
 
   if (error) {
     console.error('Supabase password recovery error:', error.message);
+    if (error.status === 429 || error.code === 'over_email_send_rate_limit') {
+      return res.status(429).json({
+        success: false,
+        message: 'Too many reset emails were requested. Please wait before requesting another link.',
+      });
+    }
+
+    return res.status(502).json({
+      success: false,
+      message: 'The reset email could not be sent right now. Please try again later.',
+    });
   }
 
   return res.json(genericResponse);
