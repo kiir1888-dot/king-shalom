@@ -57,6 +57,10 @@ async function loadArticle() {
 
 function renderArticle(article) {
   const container = document.getElementById('articleContent');
+  const articleUrl = new URL('/article.html', window.location.origin);
+  articleUrl.searchParams.set('id', article.id);
+  const facebookShareUrl = new URL('https://www.facebook.com/sharer/sharer.php');
+  facebookShareUrl.searchParams.set('u', articleUrl.toString());
   
   container.innerHTML = `
     <div class="article-hero mb-4">
@@ -77,7 +81,7 @@ function renderArticle(article) {
     </div>
 
     <div class="d-flex flex-wrap gap-2 mb-5">
-      <a href="#" class="btn btn-outline-dark btn-sm"><i class="fa-brands fa-facebook-f me-2"></i>Share</a>
+      <a href="${facebookShareUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-dark btn-sm"><i class="fa-brands fa-facebook-f me-2"></i>Share</a>
       <a href="#" class="btn btn-outline-dark btn-sm"><i class="fa-brands fa-twitter me-2"></i>Tweet</a>
       <a href="#" class="btn btn-outline-dark btn-sm"><i class="fa-solid fa-link me-2"></i>Copy link</a>
     </div>

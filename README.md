@@ -52,6 +52,8 @@ Only two users can access admin routes:
 
 Any other valid Supabase user is blocked from admin access.
 
+Password recovery sends a Supabase verification link to an allowed administrator's email. Set `ADMIN_PASSWORD_RESET_URL` to the deployed `admin-reset-password.html` URL and add the same URL to the Supabase Auth redirect allowlist.
+
 ### Add the two admin users in Supabase dashboard
 
 1. Open your project in Supabase.

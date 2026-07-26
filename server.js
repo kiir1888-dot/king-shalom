@@ -51,6 +51,10 @@ const allowedAdminEmails = new Set([ADMIN_OWNER_EMAIL, ADMIN_EDITOR_EMAIL].filte
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const ADMIN_PASSWORD_RESET_URL = process.env.ADMIN_PASSWORD_RESET_URL
+  || (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}/admin-reset-password.html`
+    : 'http://localhost:5173/admin-reset-password.html');
 const hasSupabaseConfig = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 const hasSupabaseNewsConfig = Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
 const hasAllowedAdminEmails = allowedAdminEmails.size === 2;
@@ -621,6 +625,75 @@ app.post('/api/admin/login', (req, res) => {
       console.error('Supabase login error:', error.message);
       return res.status(500).json({ success: false, message: 'Unexpected login error' });
     });
+});
+
+app.post('/api/admin/forgot-password', async (req, res) => {
+  if (!hasAdminAuthConfig || !supabase) {
+    return res.status(503).json({ success: false, message: 'Admin password recovery is not configured.' });
+  }
+
+  const email = normalizeEmail(req.body?.email);
+  const genericResponse = {
+    success: true,
+    message: 'If this email belongs to an administrator, a password reset link has been sent.',
+  };
+
+  if (!email || !allowedAdminEmails.has(email)) {
+    return res.json(genericResponse);
+  }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: ADMIN_PASSWORD_RESET_URL,
+  });
+
+  if (error) {
+    console.error('Supabase password recovery error:', error.message);
+  }
+
+  return res.json(genericResponse);
+});
+
+app.post('/api/admin/reset-password', async (req, res) => {
+  if (!hasAdminAuthConfig) {
+    return res.status(503).json({ success: false, message: 'Admin password recovery is not configured.' });
+  }
+
+  const accessToken = String(req.body?.accessToken || '');
+  const refreshToken = String(req.body?.refreshToken || '');
+  const password = String(req.body?.password || '');
+
+  if (!accessToken || !refreshToken) {
+    return res.status(401).json({ success: false, message: 'This password reset link is invalid or has expired.' });
+  }
+
+  if (password.length < 12) {
+    return res.status(400).json({ success: false, message: 'Use a password with at least 12 characters.' });
+  }
+
+  const recoveryClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+  const { data: sessionData, error: sessionError } = await recoveryClient.auth.setSession({
+    access_token: accessToken,
+    refresh_token: refreshToken,
+  });
+  const recoveredEmail = normalizeEmail(sessionData?.user?.email);
+
+  if (sessionError || !recoveredEmail || !allowedAdminEmails.has(recoveredEmail)) {
+    return res.status(401).json({ success: false, message: 'This password reset link is invalid or has expired.' });
+  }
+
+  const { error: updateError } = await recoveryClient.auth.updateUser({ password });
+  if (updateError) {
+    console.error('Supabase password update error:', updateError.message);
+    return res.status(400).json({ success: false, message: 'The password could not be updated. Request a new reset link.' });
+  }
+
+  await recoveryClient.auth.signOut();
+  return res.json({ success: true, message: 'Password updated successfully. You can now sign in.' });
 });
 
 app.get('/dashboard', requireAdminAuth, (req, res) => {
