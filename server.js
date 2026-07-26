@@ -51,10 +51,9 @@ const allowedAdminEmails = new Set([ADMIN_OWNER_EMAIL, ADMIN_EDITOR_EMAIL].filte
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const ADMIN_PASSWORD_RESET_URL = process.env.ADMIN_PASSWORD_RESET_URL
-  || (process.env.VERCEL_PROJECT_PRODUCTION_URL
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}/admin-reset-password.html`
-    : 'http://localhost:5173/admin-reset-password.html');
+const ADMIN_PASSWORD_RESET_URL = IS_VERCEL && process.env.VERCEL_PROJECT_PRODUCTION_URL
+  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}/admin-reset-password.html`
+  : process.env.ADMIN_PASSWORD_RESET_URL || 'http://localhost:5173/admin-reset-password.html';
 const hasSupabaseConfig = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 const hasSupabaseNewsConfig = Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
 const hasAllowedAdminEmails = allowedAdminEmails.size === 2;

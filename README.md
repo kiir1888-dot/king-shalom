@@ -52,7 +52,7 @@ Only two users can access admin routes:
 
 Any other valid Supabase user is blocked from admin access.
 
-Password recovery sends a Supabase verification link to an allowed administrator's email. Set `ADMIN_PASSWORD_RESET_URL` to the deployed `admin-reset-password.html` URL and add the same URL to the Supabase Auth redirect allowlist.
+Password recovery sends a Supabase verification link to an allowed administrator's email. Vercel uses its production project URL automatically; `ADMIN_PASSWORD_RESET_URL` controls the callback during local or non-Vercel deployments. Add the deployed `admin-reset-password.html` URL to the Supabase Auth redirect allowlist.
 
 ### Add the two admin users in Supabase dashboard
 
