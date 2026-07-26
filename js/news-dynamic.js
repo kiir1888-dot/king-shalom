@@ -1,7 +1,7 @@
 // Fetch news from backend API
 async function fetchNewsData() {
   try {
-    const response = await fetch('/api/news', { cache: 'no-store' });
+    const response = await fetch(`/api/news?fresh=${Date.now()}`, { cache: 'no-store' });
     const contentType = response.headers.get('content-type') || '';
     if (!contentType.includes('application/json')) {
       console.error('Server returned HTML instead of JSON. Ensure backend is running.');
@@ -65,7 +65,7 @@ function getNewsImage(news, index) {
 
 function createNewsCard(news, index) {
   const article = document.createElement('article');
-  article.className = 'news-card reveal';
+  article.className = 'news-card reveal visible';
   article.innerHTML = `
     <div class="news-img-wrap">
       <img src="${getNewsImage(news, index)}" alt="${news.title || 'News update'}" />

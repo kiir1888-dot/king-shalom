@@ -18,7 +18,7 @@ function getArticleImage(article) {
 // Load and display article
 async function loadArticle() {
   try {
-    const response = await fetch('/api/news');
+    const response = await fetch(`/api/news?fresh=${Date.now()}`, { cache: 'no-store' });
     const contentType = response.headers.get('content-type') || '';
     if (!contentType.includes('application/json')) {
       throw new Error('Server returned HTML instead of JSON. Ensure backend is running.');

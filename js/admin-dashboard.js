@@ -56,7 +56,11 @@ let selectedImageFile = null;
 const API_BASE = '/api';
 
 async function requestJson(url, options = {}) {
-  const response = await fetch(url, { cache: 'no-store', ...options });
+  const method = (options.method || 'GET').toUpperCase();
+  const requestUrl = method === 'GET'
+    ? `${url}${url.includes('?') ? '&' : '?'}fresh=${Date.now()}`
+    : url;
+  const response = await fetch(requestUrl, { cache: 'no-store', ...options });
   const contentType = response.headers.get('content-type') || '';
 
   if (!contentType.includes('application/json')) {
