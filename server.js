@@ -1,6 +1,5 @@
 import 'dotenv/config';
 import express from 'express';
-import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -21,7 +20,11 @@ const NEWS_FILE = path.join(DATA_DIR, 'news.json');
 const DASHBOARD_FILE = path.join(__dirname, 'dashboard.html');
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 const SESSION_TTL_SECONDS = Number(process.env.ADMIN_SESSION_TTL_SECONDS || 60 * 60 * 8);
-const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('base64url');
+const SESSION_SECRET = process.env.SESSION_SECRET || (IS_PRODUCTION ? '' : crypto.randomBytes(32).toString('base64url'));
+const ADMIN_COOKIE_NAME = IS_PRODUCTION ? '__Host-ks_admin' : 'ks_admin';
+const MFA_ACCESS_COOKIE_NAME = IS_PRODUCTION ? '__Host-ks_mfa_access' : 'ks_mfa_access';
+const MFA_REFRESH_COOKIE_NAME = IS_PRODUCTION ? '__Host-ks_mfa_refresh' : 'ks_mfa_refresh';
+const MFA_PENDING_TTL_SECONDS = 10 * 60;
 
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -58,6 +61,13 @@ const hasSupabaseConfig = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 const hasSupabaseNewsConfig = Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
 const hasAllowedAdminEmails = allowedAdminEmails.size === 2;
 const hasAdminAuthConfig = Boolean(hasSupabaseConfig && hasAllowedAdminEmails && SESSION_SECRET);
+
+const createAuthClient = () => createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+  },
+});
 
 const supabase = hasSupabaseConfig
   ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -153,15 +163,67 @@ const verifyAdminToken = (token) => {
   try {
     const payload = JSON.parse(Buffer.from(encodedPayload, 'base64url').toString('utf8'));
     const now = Math.floor(Date.now() / 1000);
-    return allowedAdminEmails.has(normalizeEmail(payload.sub)) && Number(payload.exp) > now;
+    return allowedAdminEmails.has(normalizeEmail(payload.sub)) && Number(payload.exp) > now ? payload : false;
   } catch {
     return false;
   }
 };
 
-const readBearerToken = (req) => {
-  const authHeader = req.headers.authorization || '';
-  return authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+const parseCookies = (req) => Object.fromEntries(
+  String(req.headers.cookie || '')
+    .split(';')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => {
+      const separator = part.indexOf('=');
+      const name = separator >= 0 ? part.slice(0, separator) : part;
+      const value = separator >= 0 ? part.slice(separator + 1) : '';
+      return [name, decodeURIComponent(value)];
+    }),
+);
+
+const serializeCookie = (name, value, maxAge) => {
+  const attributes = [
+    `${name}=${encodeURIComponent(value)}`,
+    'Path=/',
+    'HttpOnly',
+    'SameSite=Strict',
+    `Max-Age=${Math.max(0, Math.floor(maxAge))}`,
+  ];
+
+  if (IS_PRODUCTION) {
+    attributes.push('Secure');
+  }
+
+  return attributes.join('; ');
+};
+
+const setCookies = (res, cookies) => {
+  res.setHeader('Set-Cookie', cookies);
+};
+
+const clearAuthCookies = (res) => {
+  setCookies(res, [
+    serializeCookie(ADMIN_COOKIE_NAME, '', 0),
+    serializeCookie(MFA_ACCESS_COOKIE_NAME, '', 0),
+    serializeCookie(MFA_REFRESH_COOKIE_NAME, '', 0),
+  ]);
+};
+
+const setAdminCookie = (res, email) => {
+  setCookies(res, [
+    serializeCookie(ADMIN_COOKIE_NAME, createAdminToken(email), SESSION_TTL_SECONDS),
+    serializeCookie(MFA_ACCESS_COOKIE_NAME, '', 0),
+    serializeCookie(MFA_REFRESH_COOKIE_NAME, '', 0),
+  ]);
+};
+
+const setPendingMfaCookies = (res, session) => {
+  setCookies(res, [
+    serializeCookie(MFA_ACCESS_COOKIE_NAME, session.access_token, MFA_PENDING_TTL_SECONDS),
+    serializeCookie(MFA_REFRESH_COOKIE_NAME, session.refresh_token, MFA_PENDING_TTL_SECONDS),
+    serializeCookie(ADMIN_COOKIE_NAME, '', 0),
+  ]);
 };
 
 const requireAdminAuth = (req, res, next) => {
@@ -169,9 +231,65 @@ const requireAdminAuth = (req, res, next) => {
     return res.status(503).json({ success: false, message: 'Admin auth is not configured on this server.' });
   }
 
-  const token = readBearerToken(req);
-  if (!verifyAdminToken(token)) {
+  const payload = verifyAdminToken(parseCookies(req)[ADMIN_COOKIE_NAME]);
+  if (!payload) {
     return res.status(401).json({ success: false, message: 'Unauthorized' });
+  }
+
+  req.adminEmail = normalizeEmail(payload.sub);
+  return next();
+};
+
+const rateLimitBuckets = new Map();
+
+const createRateLimiter = ({ windowMs, maxAttempts, key }) => (req, res, next) => {
+  const now = Date.now();
+  if (rateLimitBuckets.size > 1000) {
+    for (const [storedKey, storedBucket] of rateLimitBuckets) {
+      if (storedBucket.resetAt <= now) {
+        rateLimitBuckets.delete(storedKey);
+      }
+    }
+  }
+
+  const bucketKey = key(req);
+  const existing = rateLimitBuckets.get(bucketKey);
+  const bucket = !existing || existing.resetAt <= now
+    ? { count: 0, resetAt: now + windowMs }
+    : existing;
+
+  bucket.count += 1;
+  rateLimitBuckets.set(bucketKey, bucket);
+
+  if (bucket.count > maxAttempts) {
+    const retryAfter = Math.max(1, Math.ceil((bucket.resetAt - now) / 1000));
+    res.setHeader('Retry-After', retryAfter);
+    return res.status(429).json({ success: false, message: 'Too many attempts. Please wait and try again.' });
+  }
+
+  return next();
+};
+
+const getClientIp = (req) => String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown').split(',')[0].trim();
+const loginRateLimit = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  maxAttempts: 5,
+  key: (req) => `login:${getClientIp(req)}:${normalizeEmail(req.body?.email)}`,
+});
+const mfaRateLimit = createRateLimiter({
+  windowMs: 10 * 60 * 1000,
+  maxAttempts: 5,
+  key: (req) => `mfa:${getClientIp(req)}`,
+});
+const recoveryRateLimit = createRateLimiter({
+  windowMs: 60 * 60 * 1000,
+  maxAttempts: 3,
+  key: (req) => `recovery:${getClientIp(req)}:${normalizeEmail(req.body?.email)}`,
+});
+
+const requireCsrfHeader = (req, res, next) => {
+  if (req.get('X-KS-CSRF') !== '1') {
+    return res.status(403).json({ success: false, message: 'Request verification failed.' });
   }
 
   return next();
@@ -198,22 +316,6 @@ const requireNewsTableColumns = () => {
     }
   });
 };
-
-const allowedOrigins = (process.env.CORS_ORIGIN || '')
-  .split(',')
-  .map((origin) => origin.trim())
-  .filter(Boolean);
-
-app.use(cors({
-  origin(origin, callback) {
-    if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
-      callback(null, true);
-      return;
-    }
-
-    callback(new Error('Not allowed by CORS'));
-  },
-}));
 
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -405,7 +507,7 @@ app.get('/api/news', async (req, res) => {
 });
 
 // POST new news
-app.post('/api/news', requireAdminAuth, async (req, res) => {
+app.post('/api/news', requireAdminAuth, requireCsrfHeader, async (req, res) => {
 
   const { title, description, category, author, date, imageUrl } = req.body;
   
@@ -465,7 +567,7 @@ app.post('/api/news', requireAdminAuth, async (req, res) => {
 });
 
 // PUT update news
-app.put('/api/news/:id', requireAdminAuth, async (req, res) => {
+app.put('/api/news/:id', requireAdminAuth, requireCsrfHeader, async (req, res) => {
 
   const { id } = req.params;
   const { title, description, category, author, date, imageUrl } = req.body;
@@ -541,7 +643,7 @@ app.put('/api/news/:id', requireAdminAuth, async (req, res) => {
 });
 
 // DELETE news
-app.delete('/api/news/:id', requireAdminAuth, async (req, res) => {
+app.delete('/api/news/:id', requireAdminAuth, requireCsrfHeader, async (req, res) => {
 
   const { id } = req.params;
 
@@ -589,7 +691,7 @@ app.delete('/api/news/:id', requireAdminAuth, async (req, res) => {
 
 // ===== ADMIN AUTH =====
 
-app.post('/api/admin/login', (req, res) => {
+app.post('/api/admin/login', loginRateLimit, async (req, res) => {
   if (!hasAdminAuthConfig || !supabase) {
     return res.status(503).json({ success: false, message: 'Admin login is not configured.' });
   }
@@ -605,28 +707,111 @@ app.post('/api/admin/login', (req, res) => {
     return res.status(401).json({ success: false, message: 'Invalid credentials' });
   }
 
-  supabase.auth
-    .signInWithPassword({ email, password })
-    .then(({ data, error }) => {
-      if (error || !data?.user) {
-        return res.status(401).json({ success: false, message: 'Invalid credentials' });
-      }
+  try {
+    const authClient = createAuthClient();
+    const { data, error } = await authClient.auth.signInWithPassword({ email, password });
+    const userEmail = normalizeEmail(data?.user?.email);
 
-      const userEmail = normalizeEmail(data.user.email);
-      if (!allowedAdminEmails.has(userEmail)) {
-        return res.status(403).json({ success: false, message: 'This user is not allowed to access admin.' });
-      }
+    if (error || !data?.session || !allowedAdminEmails.has(userEmail)) {
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
 
-      const token = createAdminToken(userEmail);
-      return res.json({ success: true, token, expiresIn: SESSION_TTL_SECONDS });
-    })
-    .catch((error) => {
-      console.error('Supabase login error:', error.message);
-      return res.status(500).json({ success: false, message: 'Unexpected login error' });
+    setPendingMfaCookies(res, data.session);
+    const { data: factorsData, error: factorsError } = await authClient.auth.mfa.listFactors();
+    if (factorsError) {
+      throw factorsError;
+    }
+
+    const verifiedFactor = factorsData?.totp?.find((factor) => factor.status === 'verified');
+    if (verifiedFactor) {
+      return res.status(202).json({ success: true, mfaRequired: true, factorId: verifiedFactor.id });
+    }
+
+    const unverifiedFactors = factorsData?.all?.filter(
+      (factor) => factor.factor_type === 'totp' && factor.status !== 'verified',
+    ) || [];
+    for (const factor of unverifiedFactors) {
+      await authClient.auth.mfa.unenroll({ factorId: factor.id });
+    }
+
+    const { data: enrollment, error: enrollmentError } = await authClient.auth.mfa.enroll({
+      factorType: 'totp',
+      friendlyName: 'King Shalom Admin',
     });
+    if (enrollmentError || !enrollment?.id || !enrollment?.totp) {
+      throw enrollmentError || new Error('MFA enrollment could not be started');
+    }
+
+    return res.status(202).json({
+      success: true,
+      mfaEnrollmentRequired: true,
+      factorId: enrollment.id,
+      qrCode: enrollment.totp.qr_code,
+      secret: enrollment.totp.secret,
+    });
+  } catch (error) {
+    clearAuthCookies(res);
+    console.error('Supabase login error:', error.message);
+    return res.status(500).json({ success: false, message: 'Unexpected login error' });
+  }
 });
 
-app.post('/api/admin/forgot-password', async (req, res) => {
+app.post('/api/admin/mfa/verify', mfaRateLimit, async (req, res) => {
+  if (!hasAdminAuthConfig) {
+    return res.status(503).json({ success: false, message: 'Admin login is not configured.' });
+  }
+
+  const factorId = String(req.body?.factorId || '');
+  const code = String(req.body?.code || '').replace(/\s/g, '');
+  const cookies = parseCookies(req);
+  const accessToken = cookies[MFA_ACCESS_COOKIE_NAME];
+  const refreshToken = cookies[MFA_REFRESH_COOKIE_NAME];
+
+  if (!factorId || !/^\d{6}$/.test(code) || !accessToken || !refreshToken) {
+    return res.status(400).json({ success: false, message: 'Enter a valid six-digit code. Your login may have expired.' });
+  }
+
+  try {
+    const authClient = createAuthClient();
+    const { data: sessionData, error: sessionError } = await authClient.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+    const userEmail = normalizeEmail(sessionData?.user?.email);
+    if (sessionError || !allowedAdminEmails.has(userEmail)) {
+      clearAuthCookies(res);
+      return res.status(401).json({ success: false, message: 'Your login has expired. Please sign in again.' });
+    }
+
+    const { error: verifyError } = await authClient.auth.mfa.challengeAndVerify({ factorId, code });
+    if (verifyError) {
+      return res.status(401).json({ success: false, message: 'The verification code is invalid or expired.' });
+    }
+
+    const { data: assurance, error: assuranceError } = await authClient.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (assuranceError || assurance?.currentLevel !== 'aal2') {
+      return res.status(401).json({ success: false, message: 'Multi-factor verification was not completed.' });
+    }
+
+    setAdminCookie(res, userEmail);
+    return res.json({ success: true, expiresIn: SESSION_TTL_SECONDS });
+  } catch (error) {
+    console.error('Supabase MFA error:', error.message);
+    return res.status(500).json({ success: false, message: 'Verification could not be completed.' });
+  }
+});
+
+app.get('/api/admin/session', requireAdminAuth, (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  return res.json({ success: true, email: req.adminEmail });
+});
+
+app.post('/api/admin/logout', requireCsrfHeader, (req, res) => {
+  clearAuthCookies(res);
+  return res.json({ success: true });
+});
+
+app.post('/api/admin/forgot-password', recoveryRateLimit, async (req, res) => {
   if (!hasAdminAuthConfig || !supabase) {
     return res.status(503).json({ success: false, message: 'Admin password recovery is not configured.' });
   }

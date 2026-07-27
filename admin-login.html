@@ -152,6 +152,45 @@
         margin-top: 0.5rem;
         display: none;
       }
+
+      .mfa-panel {
+        display: none;
+        margin-top: 1rem;
+        padding: 1rem;
+        border: 1px solid #d9e2ec;
+        border-radius: 12px;
+        background: #f8fafc;
+      }
+
+      .mfa-panel.is-visible {
+        display: block;
+      }
+
+      .mfa-qr {
+        display: none;
+        width: 180px;
+        height: 180px;
+        margin: 0.75rem auto;
+        background: #fff;
+      }
+
+      .mfa-qr.is-visible {
+        display: block;
+      }
+
+      .mfa-secret {
+        display: none;
+        padding: 0.65rem;
+        overflow-wrap: anywhere;
+        border-radius: 8px;
+        background: #e9eef5;
+        font-family: monospace;
+        font-size: 0.8rem;
+      }
+
+      .mfa-secret.is-visible {
+        display: block;
+      }
       .forgot-password-link {
         display: block;
         margin-top: 1rem;
@@ -179,12 +218,12 @@
       </div>
 
       <form id="loginForm">
-        <div class="form-group">
+        <div class="form-group credential-field">
           <label class="form-label" for="email">Email</label>
           <input type="email" id="email" class="form-control" placeholder="Enter email" autocomplete="email" required />
         </div>
 
-        <div class="form-group">
+        <div class="form-group credential-field">
           <label class="form-label" for="password">Password</label>
           <div class="password-wrapper">
             <input type="password" id="password" class="form-control" placeholder="Enter password" required />
@@ -194,7 +233,18 @@
           </div>
         </div>
 
-        <button type="submit" class="btn-login">Login</button>
+        <div class="mfa-panel" id="mfaPanel">
+          <strong id="mfaTitle">Verification required</strong>
+          <p id="mfaInstructions">Enter the six-digit code from your authenticator app.</p>
+          <img class="mfa-qr" id="mfaQr" alt="QR code for authenticator setup" />
+          <p class="mfa-secret" id="mfaSecret"></p>
+          <div class="form-group">
+            <label class="form-label" for="mfaCode">Six-digit code</label>
+            <input type="text" id="mfaCode" class="form-control" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="000000" />
+          </div>
+        </div>
+
+        <button type="submit" class="btn-login" id="loginButton">Login</button>
         <a class="forgot-password-link" href="admin-forgot-password.html">Forgot password?</a>
 
         <div class="error-message" id="errorMessage"></div>
@@ -206,6 +256,14 @@
       // Toggle password visibility
       const passwordField = document.getElementById('password');
       const togglePasswordBtn = document.getElementById('togglePassword');
+      const loginButton = document.getElementById('loginButton');
+      const mfaPanel = document.getElementById('mfaPanel');
+      const mfaTitle = document.getElementById('mfaTitle');
+      const mfaInstructions = document.getElementById('mfaInstructions');
+      const mfaQr = document.getElementById('mfaQr');
+      const mfaSecret = document.getElementById('mfaSecret');
+      const mfaCode = document.getElementById('mfaCode');
+      let pendingFactorId = '';
 
       togglePasswordBtn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -214,24 +272,42 @@
         togglePasswordBtn.textContent = type === 'password' ? '👁️' : '👁️‍🗨️';
       });
 
+      fetch('/api/admin/session', { cache: 'no-store', credentials: 'same-origin' })
+        .then((response) => {
+          if (response.ok) {
+            window.location.replace('/admin-dashboard.html');
+          }
+        })
+        .catch(() => {});
+
       document.getElementById('loginForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-
-        const email = document.getElementById('email').value.trim().toLowerCase();
-        const password = document.getElementById('password').value;
 
         const errorMsg = document.getElementById('errorMessage');
         const successMsg = document.getElementById('successMessage');
 
         errorMsg.style.display = 'none';
         successMsg.style.display = 'block';
+        loginButton.disabled = true;
+        successMsg.textContent = pendingFactorId ? 'Verifying code...' : 'Checking credentials...';
 
         try {
-          const response = await fetch('/api/admin/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password }),
-          });
+          const response = pendingFactorId
+            ? await fetch('/api/admin/mfa/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ factorId: pendingFactorId, code: mfaCode.value }),
+              })
+            : await fetch('/api/admin/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                  email: document.getElementById('email').value.trim().toLowerCase(),
+                  password: document.getElementById('password').value,
+                }),
+              });
 
           const contentType = response.headers.get('content-type') || '';
           if (!contentType.includes('application/json')) {
@@ -240,26 +316,29 @@
 
           const data = await response.json();
 
-          if (data.success) {
-            // Save token to localStorage
-            localStorage.setItem('adminToken', data.token);
+          if (data.success && (data.mfaRequired || data.mfaEnrollmentRequired)) {
+            pendingFactorId = data.factorId;
+            document.querySelectorAll('.credential-field').forEach((field) => {
+              field.style.display = 'none';
+            });
+            document.querySelector('.forgot-password-link').style.display = 'none';
+            mfaPanel.classList.add('is-visible');
+            mfaCode.required = true;
+            loginButton.textContent = 'Verify and Login';
 
-            // Support popup-based and full-page admin entry flows.
-            if (window.opener && !window.opener.closed) {
-              window.opener.postMessage({ type: 'ADMIN_LOGIN_SUCCESS', token: data.token }, window.location.origin);
-              window.close();
-              return;
+            if (data.mfaEnrollmentRequired) {
+              mfaTitle.textContent = 'Set up an authenticator app';
+              mfaInstructions.textContent = 'Scan this QR code in Google Authenticator, Microsoft Authenticator, or another TOTP app, then enter the six-digit code.';
+              mfaQr.src = data.qrCode;
+              mfaQr.classList.add('is-visible');
+              mfaSecret.textContent = `Manual setup key: ${data.secret}`;
+              mfaSecret.classList.add('is-visible');
             }
 
-            const adminPopup = document.getElementById('adminPopup');
-            if (adminPopup) {
-              adminPopup.style.display = 'block';
-              successMsg.textContent = 'Login successful';
-              return;
-            }
-
-            // Redirect to admin dashboard when no popup container exists.
-            window.location.href = '/admin-dashboard.html';
+            successMsg.style.display = 'none';
+            mfaCode.focus();
+          } else if (data.success) {
+            window.location.replace('/admin-dashboard.html');
           } else {
             successMsg.style.display = 'none';
             errorMsg.style.display = 'block';
@@ -269,6 +348,8 @@
           successMsg.style.display = 'none';
           errorMsg.style.display = 'block';
           errorMsg.textContent = 'Connection error: ' + error.message;
+        } finally {
+          loginButton.disabled = false;
         }
       });
     </script>

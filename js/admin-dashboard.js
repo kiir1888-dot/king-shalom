@@ -1,7 +1,7 @@
 // Check authentication on page load
-window.addEventListener('DOMContentLoaded', () => {
-  const token = localStorage.getItem('adminToken');
-  if (!token) {
+window.addEventListener('DOMContentLoaded', async () => {
+  const session = await requestJson(`${API_BASE}/admin/session`);
+  if (!session) {
     window.location.href = '/admin-login.html';
     return;
   }
@@ -60,7 +60,7 @@ async function requestJson(url, options = {}) {
   const requestUrl = method === 'GET'
     ? `${url}${url.includes('?') ? '&' : '?'}fresh=${Date.now()}`
     : url;
-  const response = await fetch(requestUrl, { cache: 'no-store', ...options });
+  const response = await fetch(requestUrl, { cache: 'no-store', credentials: 'same-origin', ...options });
   const contentType = response.headers.get('content-type') || '';
 
   if (!contentType.includes('application/json')) {
@@ -70,7 +70,6 @@ async function requestJson(url, options = {}) {
   const data = await response.json();
 
   if (response.status === 401) {
-    localStorage.removeItem('adminToken');
     window.location.href = '/admin-login.html';
     return null;
   }
@@ -135,6 +134,21 @@ function formatDate(dateStr) {
   });
 }
 
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>'"]/g, (character) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    "'": '&#39;',
+    '"': '&quot;'
+  })[character]);
+}
+
+function getSafeImageUrl(value) {
+  const url = String(value || '');
+  return /^(https:\/\/|data:image\/(?:png|jpeg|jpg|webp|gif);base64,)/i.test(url) ? url : getDefaultNewsImage();
+}
+
 // Show alert messages
 function showAlert(message, type = 'success') {
   const alertContainer = document.getElementById('alertContainer');
@@ -176,28 +190,29 @@ function renderNewsList() {
   allNews.forEach(news => {
     const newsItem = document.createElement('div');
     newsItem.className = 'news-item';
+    const safeId = Number(news.id);
     newsItem.innerHTML = `
       <div class="news-item-content" style="flex: 1; display: flex; gap: 1rem; align-items: flex-start;">
         <div style="width: 96px; flex: 0 0 96px;">
           <img
-            src="${news.imageUrl || getDefaultNewsImage()}"
-            alt="${news.title}"
+            src="${escapeHtml(getSafeImageUrl(news.imageUrl))}"
+            alt="${escapeHtml(news.title)}"
             style="width: 96px; height: 72px; object-fit: cover; border-radius: 8px; background: #f2f2f2;"
           />
         </div>
         <div style="flex: 1;">
-        <h3>${news.title}</h3>
+        <h3>${escapeHtml(news.title)}</h3>
         <div class="news-item-meta">
-          <strong>Category:</strong> ${news.category} | 
-          <strong>Author:</strong> ${news.author} | 
-          <strong>Date:</strong> ${formatDate(news.date)}
+          <strong>Category:</strong> ${escapeHtml(news.category)} |
+          <strong>Author:</strong> ${escapeHtml(news.author)} |
+          <strong>Date:</strong> ${escapeHtml(formatDate(news.date))}
         </div>
-        <p style="margin: 0.5rem 0 0 0; color: #555;">${news.description.substring(0, 100)}...</p>
+        <p style="margin: 0.5rem 0 0 0; color: #555;">${escapeHtml(news.description.substring(0, 100))}...</p>
         </div>
       </div>
       <div class="news-item-actions">
-        <button type="button" class="btn-edit" data-action="edit" data-news-id="${news.id}">Edit</button>
-        <button type="button" class="btn-delete" data-action="delete" data-news-id="${news.id}">Delete</button>
+        <button type="button" class="btn-edit" data-action="edit" data-news-id="${safeId}">Edit</button>
+        <button type="button" class="btn-delete" data-action="delete" data-news-id="${safeId}">Delete</button>
       </div>
     `;
     newsList.appendChild(newsItem);
@@ -222,7 +237,6 @@ function handleNewsListClick(event) {
 async function handleFormSubmit(e) {
   e.preventDefault();
 
-  const token = localStorage.getItem('adminToken');
   const title = document.getElementById('title').value;
   const description = document.getElementById('description').value;
   const category = document.getElementById('category').value;
@@ -250,7 +264,7 @@ async function handleFormSubmit(e) {
       method: method,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'X-KS-CSRF': '1'
       },
       body: JSON.stringify({
         title,
@@ -307,13 +321,11 @@ function editNews(id) {
 async function deleteNews(id) {
   if (!confirm('Are you sure you want to delete this article?')) return;
 
-  const token = localStorage.getItem('adminToken');
-
   try {
     const data = await requestJson(`${API_BASE}/news/${id}`, {
       method: 'DELETE',
       headers: {
-        'Authorization': `Bearer ${token}`
+        'X-KS-CSRF': '1'
       }
     });
 
@@ -348,9 +360,13 @@ function resetForm() {
 }
 
 // Logout
-function logout() {
+async function logout() {
   if (confirm('Are you sure you want to logout?')) {
-    localStorage.removeItem('adminToken');
+    await fetch(`${API_BASE}/admin/logout`, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'X-KS-CSRF': '1' },
+    });
     window.location.replace('/admin-login.html');
   }
 }

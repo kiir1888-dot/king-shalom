@@ -11,6 +11,21 @@ function formatDate(dateStr) {
   });
 }
 
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>'"]/g, (character) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    "'": '&#39;',
+    '"': '&quot;'
+  })[character]);
+}
+
+function getSafeArticleImage(article) {
+  const imageUrl = getArticleImage(article);
+  return /^(https:\/\/|data:image\/(?:png|jpeg|jpg|webp|gif);base64,)/i.test(imageUrl) ? imageUrl : getArticleImage({});
+}
+
 function getArticleImage(article) {
   return article.imageUrl || 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=1400&q=80';
 }
@@ -64,30 +79,30 @@ function renderArticle(article) {
   
   container.innerHTML = `
     <div class="article-hero mb-4">
-      <img src="${getArticleImage(article)}" alt="${article.title}" />
+      <img src="${escapeHtml(getSafeArticleImage(article))}" alt="${escapeHtml(article.title)}" />
     </div>
 
     <div class="d-flex flex-wrap gap-2 mb-3">
-      <span class="news-tag">${article.category}</span>
+      <span class="news-tag">${escapeHtml(article.category)}</span>
     </div>
 
-    <h1 class="display-5 fw-semibold mb-3">${article.title}</h1>
-    <p class="lead text-muted">${article.description}</p>
+    <h1 class="display-5 fw-semibold mb-3">${escapeHtml(article.title)}</h1>
+    <p class="lead text-muted">${escapeHtml(article.description)}</p>
 
     <div class="article-meta d-flex flex-wrap align-items-center gap-3 mb-4">
-      <span><i class="fa-solid fa-user me-2"></i>By ${article.author}</span>
-      <span><i class="fa-solid fa-calendar me-2"></i>${formatDate(article.date)}</span>
+      <span><i class="fa-solid fa-user me-2"></i>By ${escapeHtml(article.author)}</span>
+      <span><i class="fa-solid fa-calendar me-2"></i>${escapeHtml(formatDate(article.date))}</span>
       <span><i class="fa-solid fa-clock me-2"></i>5 min read</span>
     </div>
 
     <div class="d-flex flex-wrap gap-2 mb-5">
-      <a href="${facebookShareUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-dark btn-sm"><i class="fa-brands fa-facebook-f me-2"></i>Share</a>
+      <a href="${escapeHtml(facebookShareUrl.toString())}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-dark btn-sm"><i class="fa-brands fa-facebook-f me-2"></i>Share</a>
       <a href="#" class="btn btn-outline-dark btn-sm"><i class="fa-brands fa-twitter me-2"></i>Tweet</a>
       <a href="#" class="btn btn-outline-dark btn-sm"><i class="fa-solid fa-link me-2"></i>Copy link</a>
     </div>
 
     <div class="article-body">
-      <p>${article.description}</p>
+      <p>${escapeHtml(article.description)}</p>
       <p>This article has been published from your admin dashboard and displays dynamically across your website.</p>
     </div>
 
@@ -107,12 +122,13 @@ function renderRelatedArticles(articles) {
   articles.forEach(article => {
     const col = document.createElement('div');
     col.className = 'col-md-4';
+    const safeId = encodeURIComponent(String(article.id ?? ''));
     col.innerHTML = `
-      <a href="article.html?id=${article.id}" style="text-decoration: none; color: inherit;">
+      <a href="article.html?id=${safeId}" style="text-decoration: none; color: inherit;">
         <article class="news-card p-4">
-          <span class="news-tag">${article.category}</span>
-          <h3 class="h6 fw-semibold mt-2">${article.title}</h3>
-          <p class="text-muted small">${article.description.substring(0, 80)}...</p>
+          <span class="news-tag">${escapeHtml(article.category)}</span>
+          <h3 class="h6 fw-semibold mt-2">${escapeHtml(article.title)}</h3>
+          <p class="text-muted small">${escapeHtml(article.description.substring(0, 80))}...</p>
         </article>
       </a>
     `;

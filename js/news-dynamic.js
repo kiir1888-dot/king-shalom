@@ -39,6 +39,21 @@ function formatNewsDate(dateStr) {
   });
 }
 
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>'"]/g, (character) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    "'": '&#39;',
+    '"': '&quot;'
+  })[character]);
+}
+
+function getSafeNewsImage(news, index) {
+  const imageUrl = getNewsImage(news, index);
+  return /^(https:\/\/|data:image\/(?:png|jpeg|jpg|webp|gif);base64,)/i.test(imageUrl) ? imageUrl : getNewsImage({}, index);
+}
+
 function getNewsImage(news, index) {
   if (news.imageUrl) {
     return news.imageUrl;
@@ -66,16 +81,17 @@ function getNewsImage(news, index) {
 function createNewsCard(news, index) {
   const article = document.createElement('article');
   article.className = 'news-card reveal visible';
+  const safeId = encodeURIComponent(String(news.id ?? ''));
   article.innerHTML = `
     <div class="news-img-wrap">
-      <img src="${getNewsImage(news, index)}" alt="${news.title || 'News update'}" />
-      <span class="news-category">${news.category || 'News'}</span>
+      <img src="${escapeHtml(getSafeNewsImage(news, index))}" alt="${escapeHtml(news.title || 'News update')}" />
+      <span class="news-category">${escapeHtml(news.category || 'News')}</span>
     </div>
     <div class="news-body">
-      <time class="news-date" datetime="${news.date || ''}">${formatNewsDate(news.date)}</time>
-      <h3>${news.title || ''}</h3>
-      <p>${news.description || ''}</p>
-      <a href="article.html?id=${news.id}" class="news-read-more">Read more</a>
+      <time class="news-date" datetime="${escapeHtml(news.date || '')}">${escapeHtml(formatNewsDate(news.date))}</time>
+      <h3>${escapeHtml(news.title || '')}</h3>
+      <p>${escapeHtml(news.description || '')}</p>
+      <a href="article.html?id=${safeId}" class="news-read-more">Read more</a>
     </div>
   `;
 
