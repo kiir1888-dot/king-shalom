@@ -214,7 +214,8 @@ img {
   width: 2.4rem;
   height: 2.4rem;
   margin-right: 0.75rem;
-  border-radius: 0.8rem;
+  border: 1px solid var(--primary);
+  border-radius: 50%;
   object-fit: cover;
   object-position: center;
   display: inline-block;
@@ -238,6 +239,49 @@ img {
 .navbar-toggler {
   border: 0;
   color: var(--white);
+}
+
+.navbar-toggler-icon {
+  position: relative;
+  display: block;
+  width: 1.5rem;
+  height: 2px;
+  background: currentColor;
+  background-image: none;
+  transition: background-color 0.2s ease;
+}
+
+.navbar-toggler-icon::before,
+.navbar-toggler-icon::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  width: 1.5rem;
+  height: 2px;
+  background: currentColor;
+  transition: top 0.2s ease, transform 0.2s ease;
+}
+
+.navbar-toggler-icon::before {
+  top: -0.42rem;
+}
+
+.navbar-toggler-icon::after {
+  top: 0.42rem;
+}
+
+.navbar-toggler[aria-expanded='true'] .navbar-toggler-icon {
+  background-color: transparent;
+}
+
+.navbar-toggler[aria-expanded='true'] .navbar-toggler-icon::before {
+  top: 0;
+  transform: rotate(45deg);
+}
+
+.navbar-toggler[aria-expanded='true'] .navbar-toggler-icon::after {
+  top: 0;
+  transform: rotate(-45deg);
 }
 
 .navbar.scrolled .navbar-toggler {

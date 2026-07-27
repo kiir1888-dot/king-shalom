@@ -11,6 +11,36 @@
     background: rgba(18, 31, 48, 0.97);
   }
 
+  .navbar-toggler {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    border-radius: 50%;
+    color: var(--primary);
+    transition: background-color 0.2s ease;
+  }
+
+  .navbar-toggler[aria-expanded='true'] {
+    background: #e5e7eb;
+  }
+
+  .navbar-toggler[aria-expanded='true'] .navbar-toggler-icon::before,
+  .navbar-toggler[aria-expanded='true'] .navbar-toggler-icon::after {
+    left: 0.25rem;
+    width: 1rem;
+  }
+
+  [data-theme='dark'] .navbar-toggler {
+    color: var(--text);
+  }
+
+  [data-theme='dark'] .navbar-toggler[aria-expanded='true'] {
+    background: #4b5563;
+  }
+
   .navbar .nav-link {
     color: var(--primary) !important;
     padding: 0.8rem 0;

@@ -160,7 +160,7 @@ faqItems.forEach((item) => {
   item.querySelector('.faq-question')?.addEventListener('click', () => toggleFaq(item));
 });
 
-document.querySelectorAll('#navbarNav .nav-link').forEach((item) => {
+document.querySelectorAll('#navbarNav a').forEach((item) => {
   item.addEventListener('click', closeMobileNavigation);
 });
 
