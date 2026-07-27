@@ -15,7 +15,7 @@ The main system consists of:
 - Vite for local frontend development and production builds.
 - Express in `server.js` for authentication, news, contact, and protected API routes.
 - Supabase for administrator authentication and production news storage.
-- Supabase email OTP for the administrator's second login step.
+- Supabase email/password authentication for approved administrators.
 - SQLite, with JSON fallback, for local news storage.
 - Web3Forms for submissions from the current public contact forms.
 - GitHub for source control and Vercel for production hosting and serverless APIs.
@@ -111,7 +111,7 @@ Team content currently exists in both `founder-team.html` and `public/founder-te
 - Use a unique password of at least 12 characters for each account.
 - Keep every approved administrator mailbox and its recovery procedure under company control.
 - Never share passwords through source code, chat messages, screenshots, or Git commits.
-- Never share six-digit login codes.
+- Enable MFA on each administrator's email account where available.
 - Never commit `.env`, session secrets, SMTP passwords, or Supabase keys.
 - Store `SUPABASE_SERVICE_ROLE_KEY` only in secure server/Vercel environment variables.
 - Log out after administration, especially on shared computers.
@@ -119,9 +119,9 @@ Team content currently exists in both `founder-team.html` and `public/founder-te
 - Review Supabase authentication activity and Vercel logs regularly.
 - Keep the Supabase password-reset redirect allowlist limited to approved URLs.
 
-Administrator sessions normally last eight hours and are stored in secure `HttpOnly`, `SameSite=Strict` cookies rather than browser `localStorage`. JavaScript cannot read the session cookie. Logout expires the application and pending verification cookies. Rotating `SESSION_SECRET` invalidates all existing application sessions.
+Administrator sessions normally last eight hours and are stored in secure `HttpOnly`, `SameSite=Strict` cookies rather than browser `localStorage`. JavaScript cannot read the session cookie. Logout expires the application cookie. Rotating `SESSION_SECRET` invalidates all existing application sessions.
 
-Protected news changes require both the authenticated cookie and the application's CSRF header. Login, email-code verification, and password recovery are rate-limited. News and inquiry values are escaped when rendered to reduce stored cross-site scripting risk.
+Protected news changes require both the authenticated cookie and the application's CSRF header. Login and password recovery are rate-limited. News and inquiry values are escaped when rendered to reduce stored cross-site scripting risk.
 
 ## Backup and Recovery
 
@@ -190,18 +190,9 @@ GitHub is the source-code history. Use commits for code and static content, but 
 2. Check Supabase authentication status and logs.
 3. Confirm Vercel authentication environment variables are present.
 4. Confirm `SESSION_SECRET` is present and stable in Vercel.
-5. Wait for the displayed retry period after too many login or code-verification attempts.
+5. Wait for the displayed retry period after too many login attempts.
 6. Use the password-recovery page when appropriate.
 7. Do not create temporary passwords in source code.
-
-### Verification Email Does Not Arrive
-
-1. Confirm the administrator entered the approved email address.
-2. Check the inbox, spam folder, blocked-sender rules, and mailbox capacity.
-3. Wait before retrying if Supabase or the website reports a sending limit.
-4. Ask a trusted Supabase project owner to inspect the Auth logs and email template.
-5. Verify the administrator's identity before changing an approved email account.
-6. Review Supabase and Vercel logs for suspicious access.
 
 ### News Is Missing or Incorrect
 
@@ -223,7 +214,7 @@ GitHub is the source-code history. Use commits for code and static content, but 
 - There are no drafts, approvals, schedules, article revisions, or content rollback in the dashboard.
 - News deletion is immediate and irreversible from the interface.
 - Both administrators currently have the same permissions.
-- Email verification depends on access to the approved administrator mailbox and the Supabase email service.
+- Normal administrator login has no second factor; a stolen password can permit access, so strong unique passwords and regular authentication-log reviews are essential.
 - Application login limits are held in memory and are not shared across all Vercel serverless instances.
 - Public contact forms use Web3Forms, while the internal messages API is a separate path not used by those forms.
 - Base64 news images can make database records and API responses large.

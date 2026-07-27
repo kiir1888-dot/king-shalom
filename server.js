@@ -22,9 +22,8 @@ const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 const SESSION_TTL_SECONDS = Number(process.env.ADMIN_SESSION_TTL_SECONDS || 60 * 60 * 8);
 const SESSION_SECRET = process.env.SESSION_SECRET || (IS_PRODUCTION ? '' : crypto.randomBytes(32).toString('base64url'));
 const ADMIN_COOKIE_NAME = IS_PRODUCTION ? '__Host-ks_admin' : 'ks_admin';
-const VERIFICATION_ACCESS_COOKIE_NAME = IS_PRODUCTION ? '__Host-ks_verify_access' : 'ks_verify_access';
-const VERIFICATION_REFRESH_COOKIE_NAME = IS_PRODUCTION ? '__Host-ks_verify_refresh' : 'ks_verify_refresh';
-const VERIFICATION_PENDING_TTL_SECONDS = 10 * 60;
+const LEGACY_VERIFICATION_ACCESS_COOKIE_NAME = IS_PRODUCTION ? '__Host-ks_verify_access' : 'ks_verify_access';
+const LEGACY_VERIFICATION_REFRESH_COOKIE_NAME = IS_PRODUCTION ? '__Host-ks_verify_refresh' : 'ks_verify_refresh';
 
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -205,24 +204,16 @@ const setCookies = (res, cookies) => {
 const clearAuthCookies = (res) => {
   setCookies(res, [
     serializeCookie(ADMIN_COOKIE_NAME, '', 0),
-    serializeCookie(VERIFICATION_ACCESS_COOKIE_NAME, '', 0),
-    serializeCookie(VERIFICATION_REFRESH_COOKIE_NAME, '', 0),
+    serializeCookie(LEGACY_VERIFICATION_ACCESS_COOKIE_NAME, '', 0),
+    serializeCookie(LEGACY_VERIFICATION_REFRESH_COOKIE_NAME, '', 0),
   ]);
 };
 
 const setAdminCookie = (res, email) => {
   setCookies(res, [
     serializeCookie(ADMIN_COOKIE_NAME, createAdminToken(email), SESSION_TTL_SECONDS),
-    serializeCookie(VERIFICATION_ACCESS_COOKIE_NAME, '', 0),
-    serializeCookie(VERIFICATION_REFRESH_COOKIE_NAME, '', 0),
-  ]);
-};
-
-const setPendingVerificationCookies = (res, session) => {
-  setCookies(res, [
-    serializeCookie(VERIFICATION_ACCESS_COOKIE_NAME, session.access_token, VERIFICATION_PENDING_TTL_SECONDS),
-    serializeCookie(VERIFICATION_REFRESH_COOKIE_NAME, session.refresh_token, VERIFICATION_PENDING_TTL_SECONDS),
-    serializeCookie(ADMIN_COOKIE_NAME, '', 0),
+    serializeCookie(LEGACY_VERIFICATION_ACCESS_COOKIE_NAME, '', 0),
+    serializeCookie(LEGACY_VERIFICATION_REFRESH_COOKIE_NAME, '', 0),
   ]);
 };
 
@@ -275,11 +266,6 @@ const loginRateLimit = createRateLimiter({
   windowMs: 15 * 60 * 1000,
   maxAttempts: 5,
   key: (req) => `login:${getClientIp(req)}:${normalizeEmail(req.body?.email)}`,
-});
-const verificationRateLimit = createRateLimiter({
-  windowMs: 10 * 60 * 1000,
-  maxAttempts: 5,
-  key: (req) => `verification:${getClientIp(req)}`,
 });
 const recoveryRateLimit = createRateLimiter({
   windowMs: 60 * 60 * 1000,
@@ -716,70 +702,12 @@ app.post('/api/admin/login', loginRateLimit, async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
-    setPendingVerificationCookies(res, data.session);
-    const emailClient = createAuthClient();
-    const { error: otpError } = await emailClient.auth.signInWithOtp({
-      email: userEmail,
-      options: { shouldCreateUser: false },
-    });
-    if (otpError) {
-      throw otpError;
-    }
-
-    return res.status(202).json({
-      success: true,
-      emailCodeRequired: true,
-      message: 'A six-digit verification code was sent to your email.',
-    });
+    setAdminCookie(res, userEmail);
+    return res.json({ success: true, expiresIn: SESSION_TTL_SECONDS });
   } catch (error) {
     clearAuthCookies(res);
     console.error('Supabase login error:', error.message);
     return res.status(500).json({ success: false, message: 'Unexpected login error' });
-  }
-});
-
-app.post('/api/admin/email-code/verify', verificationRateLimit, async (req, res) => {
-  if (!hasAdminAuthConfig) {
-    return res.status(503).json({ success: false, message: 'Admin login is not configured.' });
-  }
-
-  const code = String(req.body?.code || '').replace(/\s/g, '');
-  const cookies = parseCookies(req);
-  const accessToken = cookies[VERIFICATION_ACCESS_COOKIE_NAME];
-  const refreshToken = cookies[VERIFICATION_REFRESH_COOKIE_NAME];
-
-  if (!/^\d{6}$/.test(code) || !accessToken || !refreshToken) {
-    return res.status(400).json({ success: false, message: 'Enter a valid six-digit code. Your login may have expired.' });
-  }
-
-  try {
-    const authClient = createAuthClient();
-    const { data: sessionData, error: sessionError } = await authClient.auth.setSession({
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    });
-    const userEmail = normalizeEmail(sessionData?.user?.email);
-    if (sessionError || !allowedAdminEmails.has(userEmail)) {
-      clearAuthCookies(res);
-      return res.status(401).json({ success: false, message: 'Your login has expired. Please sign in again.' });
-    }
-
-    const emailClient = createAuthClient();
-    const { data: otpData, error: verifyError } = await emailClient.auth.verifyOtp({
-      email: userEmail,
-      token: code,
-      type: 'email',
-    });
-    const verifiedEmail = normalizeEmail(otpData?.user?.email);
-    if (verifyError || verifiedEmail !== userEmail || !allowedAdminEmails.has(verifiedEmail)) {
-      return res.status(401).json({ success: false, message: 'The verification code is invalid or expired.' });
-    }
-
-    setAdminCookie(res, userEmail);
-    return res.json({ success: true, expiresIn: SESSION_TTL_SECONDS });
-  } catch (error) {
-    console.error('Supabase email verification error:', error.message);
-    return res.status(500).json({ success: false, message: 'Verification could not be completed.' });
   }
 });
 

@@ -8,7 +8,7 @@ King's Shalom is centered on a **multi-page logistics company website** built fr
 
 The backend is centered on `server.js`, which provides contact, news, and administrator APIs through Express. Vercel exposes the same Express application as serverless API routes through `api/[...all].js`.
 
-Authentication and production news storage are centered on Supabase. Administrator access requires email, password, and a six-digit verification code sent to the administrator's email. Local development uses SQLite, with JSON fallback storage if SQLite is unavailable. GitHub stores the source code, and pushing to the connected repository triggers deployment on Vercel.
+Authentication and production news storage are centered on Supabase. Administrator access requires an approved email and password. Local development uses SQLite, with JSON fallback storage if SQLite is unavailable. GitHub stores the source code, and pushing to the connected repository triggers deployment on Vercel.
 
 The React files under `src/` are separate starter content and are not the primary King's Shalom website entry point.
 
@@ -98,7 +98,7 @@ npm run dev -- --host
 
 ## Admin Auth (Supabase)
 
-Admin login uses email/password verified by Supabase on the backend (`/api/admin/login`) followed by a six-digit Supabase email OTP.
+Admin login uses email/password verified by Supabase on the backend (`/api/admin/login`).
 Only two users can access admin routes:
 
 - `ADMIN_OWNER_EMAIL`
@@ -106,22 +106,7 @@ Only two users can access admin routes:
 
 Any other valid Supabase user is blocked from admin access.
 
-After the password is accepted, Supabase sends a fresh six-digit code to the same approved email address. Enter that code on the login page to complete sign-in. No authenticator application or QR-code enrollment is required.
-
-After email verification succeeds, the server creates an eight-hour application session in an `HttpOnly`, `SameSite=Strict`, `Secure` production cookie. The session is not stored in browser `localStorage` and is not returned to frontend JavaScript. Protected write requests also require the application's CSRF header.
-
-### Supabase email-code template
-
-Supabase uses the **Magic Link** email template for `signInWithOtp`. In **Supabase Dashboard > Authentication > Email Templates > Magic Link**, include `{{ .Token }}` in the message so administrators receive the six-digit code directly. For example:
-
-```html
-<h2>King's Shalom administrator verification</h2>
-<p>Your verification code is:</p>
-<p><strong>{{ .Token }}</strong></p>
-<p>This code expires shortly. If you did not try to sign in, ignore this email.</p>
-```
-
-Keep the OTP expiry short and review the Supabase email sending rate limits before production use.
+After the password is accepted, the server creates an eight-hour application session in an `HttpOnly`, `SameSite=Strict`, `Secure` production cookie. The session is not stored in browser `localStorage` and is not returned to frontend JavaScript. Protected write requests also require the application's CSRF header.
 
 Password recovery sends a Supabase verification link to an allowed administrator's email. Vercel uses its production project URL automatically; `ADMIN_PASSWORD_RESET_URL` controls the callback during local or non-Vercel deployments. Add the deployed `admin-reset-password.html` URL to the Supabase Auth redirect allowlist.
 
@@ -136,9 +121,9 @@ Password recovery sends a Supabase verification link to an allowed administrator
 
 No credentials are stored in frontend source code.
 
-### Email-code access recovery
+### Account recovery
 
-Keep each approved administrator email account secure and recoverable under company control. If an administrator cannot receive the code, check spam filtering and Supabase Auth logs, then use the email provider's approved account-recovery process. A trusted Supabase project owner can update the approved authentication account only after verifying the administrator's identity.
+Keep each approved administrator email account secure and recoverable under company control because password recovery uses that mailbox. A trusted Supabase project owner should update an approved authentication account only after verifying the administrator's identity.
 
 ## Production Security Notes
 
@@ -146,7 +131,8 @@ Keep each approved administrator email account secure and recoverable under comp
 - Set a long, stable `SESSION_SECRET` in Vercel. Production admin authentication is disabled when it is missing.
 - Rotate `SESSION_SECRET` if an admin session compromise is suspected. Rotation signs out existing sessions.
 - Keep HTTPS enabled so production cookies retain their `Secure` protection.
-- Login is limited to five attempts per 15 minutes for each IP/email combination. Email-code verification is limited to five attempts per 10 minutes, and password recovery to three attempts per hour.
+- Login is limited to five attempts per 15 minutes for each IP/email combination, and password recovery to three attempts per hour.
+- Normal login does not use a second factor. Require a strong, unique password and secure the administrator's email account with its own MFA where available.
 - The in-memory application limiter is an additional safeguard; Supabase and Vercel platform protections should also remain enabled because serverless instances do not share memory.
 - News and inquiry content is escaped before rendering to reduce stored cross-site scripting risk.
 

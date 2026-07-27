@@ -153,18 +153,6 @@
         display: none;
       }
 
-      .verification-panel {
-        display: none;
-        margin-top: 1rem;
-        padding: 1rem;
-        border: 1px solid #d9e2ec;
-        border-radius: 12px;
-        background: #f8fafc;
-      }
-
-      .verification-panel.is-visible {
-        display: block;
-      }
       .forgot-password-link {
         display: block;
         margin-top: 1rem;
@@ -239,15 +227,6 @@
           </div>
         </div>
 
-        <div class="verification-panel" id="verificationPanel">
-          <strong>Check your email</strong>
-          <p>Enter the six-digit verification code sent to your email address.</p>
-          <div class="form-group">
-            <label class="form-label" for="emailCode">Verification code</label>
-            <input type="text" id="emailCode" class="form-control" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="000000" />
-          </div>
-        </div>
-
         <button type="submit" class="btn-login" id="loginButton">Login</button>
         <a class="forgot-password-link" href="admin-forgot-password.html">Forgot password?</a>
 
@@ -261,9 +240,6 @@
       const passwordField = document.getElementById('password');
       const togglePasswordBtn = document.getElementById('togglePassword');
       const loginButton = document.getElementById('loginButton');
-      const verificationPanel = document.getElementById('verificationPanel');
-      const emailCode = document.getElementById('emailCode');
-      let emailCodePending = false;
 
       togglePasswordBtn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -289,25 +265,18 @@
         errorMsg.style.display = 'none';
         successMsg.style.display = 'block';
         loginButton.disabled = true;
-        successMsg.textContent = emailCodePending ? 'Verifying code...' : 'Checking credentials...';
+        successMsg.textContent = 'Checking credentials...';
 
         try {
-          const response = emailCodePending
-            ? await fetch('/api/admin/email-code/verify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'same-origin',
-                body: JSON.stringify({ code: emailCode.value }),
-              })
-            : await fetch('/api/admin/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'same-origin',
-                body: JSON.stringify({
-                  email: document.getElementById('email').value.trim().toLowerCase(),
-                  password: document.getElementById('password').value,
-                }),
-              });
+          const response = await fetch('/api/admin/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({
+              email: document.getElementById('email').value.trim().toLowerCase(),
+              password: document.getElementById('password').value,
+            }),
+          });
 
           const contentType = response.headers.get('content-type') || '';
           if (!contentType.includes('application/json')) {
@@ -316,18 +285,7 @@
 
           const data = await response.json();
 
-          if (data.success && data.emailCodeRequired) {
-            emailCodePending = true;
-            document.querySelectorAll('.credential-field').forEach((field) => {
-              field.style.display = 'none';
-            });
-            document.querySelector('.forgot-password-link').style.display = 'none';
-            verificationPanel.classList.add('is-visible');
-            emailCode.required = true;
-            loginButton.textContent = 'Verify and Login';
-            successMsg.style.display = 'none';
-            emailCode.focus();
-          } else if (data.success) {
+          if (data.success) {
             window.location.replace('/admin-dashboard.html');
           } else {
             successMsg.style.display = 'none';

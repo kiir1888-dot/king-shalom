@@ -19,35 +19,18 @@ This is the operating guide for the person responsible for daily website adminis
 1. Open `/admin-login.html` on the live website.
 2. Enter an approved administrator email and password.
 3. Select **Login**.
-4. Check the email inbox for a new message containing the six-digit verification code.
-5. Enter the code on the login page.
-6. Select **Verify and Login**.
-7. Confirm that the **News Management Dashboard** opens.
+4. Confirm that the **News Management Dashboard** opens.
 
-Only approved administrator accounts can log in. Never share a password or verification code. Administrator sessions normally expire after eight hours.
-
-### Receiving the Email Code
-
-1. Enter the approved administrator email and password on the login page.
-2. Keep the login page open and check the inbox for that email account.
-3. Open the newest King's Shalom verification message.
-4. Enter its six-digit code on the login page.
-5. Select **Verify and Login**.
-6. Confirm the dashboard opens.
-
-Use only the newest code and enter it promptly because codes expire. Treat the code as a temporary password and never forward or share it.
+Only approved administrator accounts can log in. Never share a password. Administrator sessions normally expire after eight hours.
 
 If login fails:
 
 1. Check the spelling of the email address.
 2. Confirm that the account is an approved administrator account.
 3. Retry the password carefully.
-4. Check the inbox and spam folder, then use the code from the newest message.
-5. Wait before retrying if the website reports too many attempts.
-6. Use **Forgot Password** if necessary.
-7. Contact the Website and IT Administrator if the problem continues.
-
-If the administrator cannot access the approved mailbox, use the email provider's company-approved recovery process or contact the trusted Supabase project owner after completing identity verification.
+4. Wait before retrying if the website reports too many attempts.
+5. Use **Forgot Password** if necessary.
+6. Contact the Website and IT Administrator if the problem continues.
 
 ## Publish a News Article
 
@@ -184,7 +167,6 @@ Static changes require a local build, Git commit, GitHub push, and Vercel deploy
 - New inquiries were reviewed and assigned.
 - Any website error was recorded and reported.
 - No password, token, or customer information was left visible.
-- No verification code was recorded or left visible.
 - The administrator account was logged out.
 
 ## Weekly Tasks
@@ -241,14 +223,6 @@ Static changes require a local build, Git commit, GitHub push, and Vercel deploy
 3. Check spam/junk mail.
 4. Use only the newest recovery link.
 5. Contact the Website and IT Administrator if the link or callback fails.
-
-### Email Code Does Not Arrive or Work
-
-1. Confirm the approved email address was entered correctly.
-2. Check the inbox, spam folder, blocked senders, and mailbox capacity.
-3. Use only the newest six-digit code and enter it promptly.
-4. Stop retrying if the website reports too many attempts.
-5. Contact the trusted Supabase project owner to inspect Auth logs and the Magic Link email template if messages do not arrive.
 
 ## Emergency Contacts Record
 
