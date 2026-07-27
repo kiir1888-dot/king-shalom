@@ -9,7 +9,7 @@ const galleryButtons = Array.from(document.querySelectorAll('[data-lightbox]'));
 const lightbox = document.getElementById('lightbox');
 const lightboxImage = document.querySelector('.lightbox-image');
 const closeLightbox = document.querySelector('.lightbox-close');
-const themeToggle = document.getElementById('themeToggle');
+const themeToggles = Array.from(document.querySelectorAll('.theme-toggle'));
 const THEME_KEY = 'ks-theme';
 
 const refreshRevealItems = () => {
@@ -52,8 +52,10 @@ const applyTheme = (theme) => {
   localStorage.setItem(THEME_KEY, theme);
 
   const isDark = theme === 'dark';
-  themeToggle?.setAttribute('aria-pressed', String(isDark));
-  themeToggle?.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+  themeToggles.forEach((toggle) => {
+    toggle.setAttribute('aria-pressed', String(isDark));
+    toggle.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+  });
 
   const themeMeta = document.querySelector('meta[name="theme-color"]');
   if (themeMeta) {
@@ -202,9 +204,11 @@ backToTop?.addEventListener('click', () => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
-themeToggle?.addEventListener('click', () => {
-  const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-  applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+themeToggles.forEach((toggle) => {
+  toggle.addEventListener('click', () => {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+  });
 });
 
 window.addEventListener('scroll', () => {

@@ -31,6 +31,17 @@
     background: rgba(18, 31, 48, 0.98);
   }
 
+  .mobile-theme-toggle,
+  .navbar.scrolled .mobile-theme-toggle,
+  [data-theme='dark'] .mobile-theme-toggle {
+    border-color: var(--border);
+  }
+
+  .mobile-theme-toggle {
+    background: var(--surface);
+    color: var(--primary);
+  }
+
   [data-theme='dark'] .theme-toggle {
     border-color: var(--border);
     background: var(--surface);
