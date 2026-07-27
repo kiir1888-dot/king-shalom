@@ -701,10 +701,16 @@
           <div class="col-lg-4">
             <h3>Newsletter</h3>
             <p>Stay updated on logistics insights and service updates.</p>
-            <div class="newsletter-form">
-              <input type="email" placeholder="Email address" />
-              <button type="button">Subscribe</button>
-            </div>
+            <form class="newsletter-form" id="newsletterForm">
+              <input type="hidden" name="access_key" value="b95f86b3-8108-401c-b5fe-eea5201c8f23" />
+              <input type="hidden" name="subject" value="New newsletter subscription from King's Shalom website" />
+              <input type="hidden" name="from_name" value="King's Shalom Newsletter" />
+              <input type="checkbox" name="botcheck" class="newsletter-botcheck" tabindex="-1" autocomplete="off" />
+              <label class="visually-hidden" for="newsletterEmail">Email address</label>
+              <input id="newsletterEmail" name="email" type="email" placeholder="Email address" autocomplete="email" aria-describedby="newsletterStatus" required />
+              <button id="newsletterSubmit" type="submit">Subscribe</button>
+            </form>
+            <p class="newsletter-status" id="newsletterStatus" role="status" aria-live="polite"></p>
           </div>
         </div>
         <div class="footer-bottom mt-4">

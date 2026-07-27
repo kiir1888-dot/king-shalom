@@ -281,3 +281,43 @@ contactForm?.addEventListener('submit', async (e) => {
     formSubmitBtn.disabled = false;
   }
 });
+
+const newsletterForm = document.getElementById('newsletterForm');
+const newsletterSubmit = document.getElementById('newsletterSubmit');
+const newsletterStatus = document.getElementById('newsletterStatus');
+
+newsletterForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+
+  if (!newsletterForm.checkValidity()) {
+    newsletterForm.reportValidity();
+    return;
+  }
+
+  newsletterSubmit.disabled = true;
+  newsletterSubmit.textContent = 'Subscribing...';
+  newsletterStatus.className = 'newsletter-status';
+  newsletterStatus.textContent = '';
+
+  try {
+    const response = await fetch('https://api.web3forms.com/submit', {
+      method: 'POST',
+      body: new FormData(newsletterForm),
+    });
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error('Newsletter subscription failed');
+    }
+
+    newsletterForm.reset();
+    newsletterStatus.classList.add('is-success');
+    newsletterStatus.textContent = 'Thank you for subscribing.';
+  } catch {
+    newsletterStatus.classList.add('is-error');
+    newsletterStatus.textContent = 'Subscription failed. Please try again.';
+  } finally {
+    newsletterSubmit.disabled = false;
+    newsletterSubmit.textContent = 'Subscribe';
+  }
+});
