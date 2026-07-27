@@ -15,7 +15,7 @@ The main system consists of:
 - Vite for local frontend development and production builds.
 - Express in `server.js` for authentication, news, contact, and protected API routes.
 - Supabase for administrator authentication and production news storage.
-- TOTP multi-factor authentication using an administrator's authenticator application.
+- Supabase email OTP for the administrator's second login step.
 - SQLite, with JSON fallback, for local news storage.
 - Web3Forms for submissions from the current public contact forms.
 - GitHub for source control and Vercel for production hosting and serverless APIs.
@@ -109,10 +109,9 @@ Team content currently exists in both `founder-team.html` and `public/founder-te
 
 - Give administrator access only to approved personnel.
 - Use a unique password of at least 12 characters for each account.
-- Require every administrator to enroll a TOTP authenticator during first login.
-- Keep the authenticator device and recovery procedure under company control.
+- Keep every approved administrator mailbox and its recovery procedure under company control.
 - Never share passwords through source code, chat messages, screenshots, or Git commits.
-- Never share authenticator QR codes, manual setup keys, or six-digit codes.
+- Never share six-digit login codes.
 - Never commit `.env`, session secrets, SMTP passwords, or Supabase keys.
 - Store `SUPABASE_SERVICE_ROLE_KEY` only in secure server/Vercel environment variables.
 - Log out after administration, especially on shared computers.
@@ -120,9 +119,9 @@ Team content currently exists in both `founder-team.html` and `public/founder-te
 - Review Supabase authentication activity and Vercel logs regularly.
 - Keep the Supabase password-reset redirect allowlist limited to approved URLs.
 
-Administrator sessions normally last eight hours and are stored in secure `HttpOnly`, `SameSite=Strict` cookies rather than browser `localStorage`. JavaScript cannot read the session cookie. Logout expires the application and pending MFA cookies. Rotating `SESSION_SECRET` invalidates all existing application sessions.
+Administrator sessions normally last eight hours and are stored in secure `HttpOnly`, `SameSite=Strict` cookies rather than browser `localStorage`. JavaScript cannot read the session cookie. Logout expires the application and pending verification cookies. Rotating `SESSION_SECRET` invalidates all existing application sessions.
 
-Protected news changes require both the authenticated cookie and the application's CSRF header. Login, MFA verification, and password recovery are rate-limited. News and inquiry values are escaped when rendered to reduce stored cross-site scripting risk.
+Protected news changes require both the authenticated cookie and the application's CSRF header. Login, email-code verification, and password recovery are rate-limited. News and inquiry values are escaped when rendered to reduce stored cross-site scripting risk.
 
 ## Backup and Recovery
 
@@ -191,17 +190,18 @@ GitHub is the source-code history. Use commits for code and static content, but 
 2. Check Supabase authentication status and logs.
 3. Confirm Vercel authentication environment variables are present.
 4. Confirm `SESSION_SECRET` is present and stable in Vercel.
-5. Wait for the displayed retry period after too many login or MFA attempts.
+5. Wait for the displayed retry period after too many login or code-verification attempts.
 6. Use the password-recovery page when appropriate.
 7. Do not create temporary passwords in source code.
 
-### Authenticator Is Lost or Replaced
+### Verification Email Does Not Arrive
 
-1. Verify the administrator's identity through an approved company procedure.
-2. Ask a trusted Supabase project owner to inspect and reset the affected MFA factor.
-3. Never request the old six-digit code, QR code, or manual setup key through email or chat.
-4. Have the administrator sign in and enroll a new authenticator.
-5. Review Supabase and Vercel logs for suspicious access.
+1. Confirm the administrator entered the approved email address.
+2. Check the inbox, spam folder, blocked-sender rules, and mailbox capacity.
+3. Wait before retrying if Supabase or the website reports a sending limit.
+4. Ask a trusted Supabase project owner to inspect the Auth logs and email template.
+5. Verify the administrator's identity before changing an approved email account.
+6. Review Supabase and Vercel logs for suspicious access.
 
 ### News Is Missing or Incorrect
 
@@ -223,7 +223,7 @@ GitHub is the source-code history. Use commits for code and static content, but 
 - There are no drafts, approvals, schedules, article revisions, or content rollback in the dashboard.
 - News deletion is immediate and irreversible from the interface.
 - Both administrators currently have the same permissions.
-- MFA factor recovery currently requires a trusted Supabase project owner; there is no self-service recovery-code interface.
+- Email verification depends on access to the approved administrator mailbox and the Supabase email service.
 - Application login limits are held in memory and are not shared across all Vercel serverless instances.
 - Public contact forms use Web3Forms, while the internal messages API is a separate path not used by those forms.
 - Base64 news images can make database records and API responses large.

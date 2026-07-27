@@ -19,35 +19,35 @@ This is the operating guide for the person responsible for daily website adminis
 1. Open `/admin-login.html` on the live website.
 2. Enter an approved administrator email and password.
 3. Select **Login**.
-4. Enter the current six-digit code from the enrolled authenticator app.
-5. Select **Verify and Login**.
-6. Confirm that the **News Management Dashboard** opens.
-
-Only approved administrator accounts can log in. Never share a password, authenticator code, QR code, or manual setup key. Administrator sessions normally expire after eight hours.
-
-### First Login and Authenticator Enrollment
-
-1. Install Google Authenticator, Microsoft Authenticator, or another trusted TOTP app on the approved administrator device.
-2. Enter the approved administrator email and password on the login page.
-3. When the setup panel appears, scan the displayed QR code with the authenticator app.
-4. If scanning is unavailable, enter the displayed manual setup key directly in the app.
-5. Enter the generated six-digit code on the website.
+4. Check the email inbox for a new message containing the six-digit verification code.
+5. Enter the code on the login page.
 6. Select **Verify and Login**.
-7. Confirm the dashboard opens before closing the setup page.
+7. Confirm that the **News Management Dashboard** opens.
 
-The QR code and manual setup key are equivalent to a security credential. Do not photograph, email, print publicly, or share them through chat.
+Only approved administrator accounts can log in. Never share a password or verification code. Administrator sessions normally expire after eight hours.
+
+### Receiving the Email Code
+
+1. Enter the approved administrator email and password on the login page.
+2. Keep the login page open and check the inbox for that email account.
+3. Open the newest King's Shalom verification message.
+4. Enter its six-digit code on the login page.
+5. Select **Verify and Login**.
+6. Confirm the dashboard opens.
+
+Use only the newest code and enter it promptly because codes expire. Treat the code as a temporary password and never forward or share it.
 
 If login fails:
 
 1. Check the spelling of the email address.
 2. Confirm that the account is an approved administrator account.
 3. Retry the password carefully.
-4. Check that the authenticator device time is set automatically, then use the newest six-digit code.
+4. Check the inbox and spam folder, then use the code from the newest message.
 5. Wait before retrying if the website reports too many attempts.
 6. Use **Forgot Password** if necessary.
 7. Contact the Website and IT Administrator if the problem continues.
 
-If the authenticator device is lost, do not repeatedly retry login. Contact the trusted Supabase project owner, complete identity verification, and have the old MFA factor reset before enrolling a replacement device.
+If the administrator cannot access the approved mailbox, use the email provider's company-approved recovery process or contact the trusted Supabase project owner after completing identity verification.
 
 ## Publish a News Article
 
@@ -184,7 +184,7 @@ Static changes require a local build, Git commit, GitHub push, and Vercel deploy
 - New inquiries were reviewed and assigned.
 - Any website error was recorded and reported.
 - No password, token, or customer information was left visible.
-- No authenticator code, QR code, or manual setup key was recorded or left visible.
+- No verification code was recorded or left visible.
 - The administrator account was logged out.
 
 ## Weekly Tasks
@@ -192,7 +192,7 @@ Static changes require a local build, Git commit, GitHub push, and Vercel deploy
 - Export or back up the Supabase news table.
 - Review failed Vercel deployments and function errors.
 - Review Supabase authentication activity.
-- Confirm both approved administrators can access their authenticator apps.
+- Confirm both approved administrators can securely access their email inboxes.
 - Submit one test inquiry and confirm it reaches the correct inbox.
 - Check major navigation links, WhatsApp, email, and social links.
 - Review articles for broken external images.
@@ -201,7 +201,7 @@ Static changes require a local build, Git commit, GitHub push, and Vercel deploy
 ## Monthly Tasks
 
 - Review administrator access with the business owner.
-- Verify the documented MFA recovery owner still has secure Supabase project access.
+- Verify the documented email-account recovery owner still has secure Supabase project access.
 - Test recovery from a news backup.
 - Review old, inaccurate, or duplicated content.
 - Confirm company phone, email, address, services, and team information.
@@ -242,13 +242,13 @@ Static changes require a local build, Git commit, GitHub push, and Vercel deploy
 4. Use only the newest recovery link.
 5. Contact the Website and IT Administrator if the link or callback fails.
 
-### Authenticator Code Does Not Work
+### Email Code Does Not Arrive or Work
 
-1. Confirm that the code belongs to the King's Shalom administrator entry in the authenticator app.
-2. Set the phone's date and time to automatic.
-3. Wait for a new six-digit code and try once more.
+1. Confirm the approved email address was entered correctly.
+2. Check the inbox, spam folder, blocked senders, and mailbox capacity.
+3. Use only the newest six-digit code and enter it promptly.
 4. Stop retrying if the website reports too many attempts.
-5. Contact the trusted Supabase project owner if the authenticator was lost, replaced, or removed.
+5. Contact the trusted Supabase project owner to inspect Auth logs and the Magic Link email template if messages do not arrive.
 
 ## Emergency Contacts Record
 

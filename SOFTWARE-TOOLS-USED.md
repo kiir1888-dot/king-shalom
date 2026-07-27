@@ -119,10 +119,10 @@ GitHub Dependabot can notify the repository owner when it detects a known depend
 The deployed administrator security controls include:
 
 - Supabase email/password verification restricted to two approved email addresses.
-- Mandatory TOTP MFA through an authenticator application.
+- Password verification followed by a six-digit Supabase email OTP.
 - `HttpOnly`, `Secure`, `SameSite=Strict` production session cookies.
 - CSRF protection on authenticated write operations and logout.
-- Rate limiting for password login, MFA verification, and password recovery.
+- Rate limiting for password login, email-code verification, and password recovery.
 - Escaping of dynamic news and inquiry content to reduce stored cross-site scripting risk.
 - GitHub Dependabot and CodeQL for dependency and source-code security findings.
 
@@ -144,4 +144,4 @@ Dependency updates are not automatically safe for production. Apply them locally
 
 Buying or renewing a Vercel domain does not update dependencies and does not transfer software-maintenance responsibility. During handover, record who owns the GitHub repository, Vercel project and domain, Supabase project, security notifications, monthly checks, and emergency maintenance.
 
-The handover record must also identify who can reset an administrator's Supabase MFA factor if an authenticator device is lost. Authenticator QR codes, manual setup keys, passwords, session secrets, and Supabase keys must never be stored in this repository.
+The handover record must also identify who controls each approved administrator mailbox and who can inspect Supabase Auth settings if verification emails fail. Passwords, email codes, session secrets, and Supabase keys must never be stored in this repository.
