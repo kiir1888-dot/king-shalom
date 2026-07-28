@@ -761,10 +761,6 @@ h6::marker {
 }
 
 .team-featured-badge {
-  position: absolute;
-  top: 0.6rem;
-  left: 0.6rem;
-  z-index: 2;
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
@@ -776,6 +772,7 @@ h6::marker {
   border-radius: 999px;
   letter-spacing: 0;
   line-height: 1.2;
+  margin-bottom: 0.55rem;
 }
 
 .team-card img {
