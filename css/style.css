@@ -162,6 +162,29 @@ h6::marker {
   border: 1px solid var(--border);
   background: var(--surface);
   box-shadow: var(--shadow);
+  position: absolute;
+  z-index: 1030;
+}
+
+/* Gold-accent dropdown (King's Shalom specific) */
+.navbar .dropdown-menu.ks-dropdown {
+  border-top: 3px solid var(--secondary); /* gold accent bar */
+  border-radius: 0 0 0.85rem 0.85rem;
+  padding: 0.5rem 0;
+}
+
+.navbar .ks-dropdown .dropdown-item {
+  padding: 0.65rem 1.2rem;
+  transition: background-color 0.2s ease, color 0.2s ease, padding-left 0.2s ease;
+  border-left: 3px solid transparent;
+}
+
+.navbar .ks-dropdown .dropdown-item:hover,
+.navbar .ks-dropdown .dropdown-item:focus {
+  background: rgba(244, 180, 0, 0.12);
+  color: var(--primary);
+  border-left-color: var(--secondary);
+  padding-left: 1.5rem;
 }
 
 .navbar .dropdown-item {

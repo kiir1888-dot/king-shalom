@@ -75,20 +75,27 @@
           </button>
           <div class="collapse navbar-collapse header-layout" id="navbarNav">
             <ul class="navbar-nav header-nav mb-2 mb-lg-0">
-              <li class="nav-item"><a class="nav-link active" href="#home">Home</a></li>
+              <!-- About Dropdown: includes Home, Leadership, Testimonials -->
               <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#about" id="aboutDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">About</a>
-                <ul class="dropdown-menu" aria-labelledby="aboutDropdown">
-                  <li><a class="dropdown-item" href="#why-us">Why Choose Us?</a></li>
-                  <li><a class="dropdown-item" href="#process">Process</a></li>
+                <ul class="dropdown-menu ks-dropdown" aria-labelledby="aboutDropdown">
+                  <li><a class="dropdown-item" href="#home">Home</a></li>
+                  <li><a class="dropdown-item" href="#team">Leadership</a></li>
+                  <li><a class="dropdown-item" href="#testimonials">Testimonials</a></li>
                 </ul>
               </li>
-              <li class="nav-item"><a class="nav-link" href="#team">Leadership</a></li>
+              <!-- Services (top-level link) -->
               <li class="nav-item"><a class="nav-link" href="#services">Services</a></li>
-              <li class="nav-item"><a class="nav-link" href="#gallery">Gallery</a></li>
-              <li class="nav-item"><a class="nav-link" href="#testimonials">Testimonials</a></li>
-              <li class="nav-item"><a class="nav-link" href="#news">News</a></li>
-              <li class="nav-item"><a class="nav-link" href="#faqs">FAQs</a></li>
+              <!-- Media & Info Dropdown: includes Gallery, News, FAQs -->
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="mediaDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Media &amp; Info</a>
+                <ul class="dropdown-menu ks-dropdown" aria-labelledby="mediaDropdown">
+                  <li><a class="dropdown-item" href="#gallery">Gallery</a></li>
+                  <li><a class="dropdown-item" href="#news">News</a></li>
+                  <li><a class="dropdown-item" href="#faqs">FAQs</a></li>
+                </ul>
+              </li>
+              <!-- Contact (top-level link) -->
               <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
             </ul>
             <div class="navbar-actions">
