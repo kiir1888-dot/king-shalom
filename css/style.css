@@ -95,9 +95,53 @@ img {
   max-width: 760px;
 }
 
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  display: block;
+  padding-left: 0;
+  list-style: none;
+  font-weight: 700;
+}
+
+h1::marker,
+h2::marker,
+h3::marker,
+h4::marker,
+h5::marker,
+h6::marker {
+  content: '';
+}
+
 .navbar {
   padding: 1rem 0;
   transition: background 0.25s ease, box-shadow 0.25s ease, padding 0.25s ease;
+}
+
+.navbar > .container,
+.header-layout,
+.header-nav,
+.navbar-actions {
+  display: flex;
+  align-items: center;
+}
+
+.navbar > .container {
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.header-layout {
+  justify-content: flex-end;
+  gap: clamp(1.5rem, 4vw, 4rem);
+}
+
+.header-nav {
+  flex-direction: row;
+  gap: 0.5rem;
 }
 
 .navbar.scrolled {
@@ -107,7 +151,35 @@ img {
 }
 
 .navbar-actions {
-  margin-top: 0.75rem;
+  flex: 0 0 auto;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.navbar .dropdown-menu {
+  min-width: 11rem;
+  margin-top: 0;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.navbar .dropdown-item {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.navbar .dropdown-item:hover,
+.navbar .dropdown-item:focus {
+  color: var(--primary);
+  background: rgba(244, 180, 0, 0.16);
+}
+
+@media (min-width: 992px) {
+  .navbar .dropdown:hover > .dropdown-menu,
+  .navbar .dropdown:focus-within > .dropdown-menu {
+    display: block;
+  }
 }
 
 .theme-toggle {
@@ -660,6 +732,25 @@ img {
   padding-left: 0.75rem;
 }
 
+.leadership-primary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.leadership-secondary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  width: min(100%, calc((100% - 4.5rem) / 4));
+  margin-top: 1.5rem;
+}
+
+.leadership-primary > *,
+.leadership-secondary > * {
+  min-width: 0;
+}
+
 .team-card {
   overflow: hidden;
   transition: transform 0.25s ease, box-shadow 0.25s ease;
@@ -694,7 +785,7 @@ img {
 }
 
 .team-card--featured img {
-  height: 380px;
+  height: 320px;
   object-position: center 15%;
 }
 
@@ -729,6 +820,50 @@ img {
 
   .team-card--featured img {
     height: 340px;
+  }
+}
+
+@media (max-width: 991px) {
+  .header-layout,
+  .header-nav,
+  .navbar-actions {
+    align-items: stretch;
+  }
+
+  .header-layout,
+  .header-nav {
+    flex-direction: column;
+  }
+
+  .header-layout {
+    gap: 1rem;
+  }
+
+  .navbar-actions {
+    justify-content: flex-start;
+  }
+
+  .navbar .dropdown-menu {
+    position: static;
+    box-shadow: none;
+  }
+
+  .leadership-primary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .leadership-secondary {
+    width: calc((100% - 1.5rem) / 2);
+  }
+}
+
+@media (max-width: 576px) {
+  .leadership-primary {
+    grid-template-columns: 1fr;
+  }
+
+  .leadership-secondary {
+    width: 100%;
   }
 }
 
@@ -769,14 +904,27 @@ img {
   color: var(--white);
 }
 
+#testimonialCarousel {
+  width: min(100%, 760px);
+  margin-inline: auto;
+}
+
 .testimonial-card {
-  padding: 2rem;
+  min-height: 190px;
+  padding: 1.5rem clamp(1.25rem, 4vw, 2.5rem);
+  border-color: rgba(244, 180, 0, 0.65);
   text-align: center;
   background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(245,247,250,0.95));
+  box-shadow:
+    0 0 0 1px rgba(10, 46, 93, 0.18),
+    0 0 20px rgba(244, 180, 0, 0.3),
+    0 14px 32px rgba(10, 46, 93, 0.12);
 }
 
 .testimonial-card p {
-  font-size: 1.12rem;
+  max-width: 640px;
+  margin-inline: auto;
+  font-size: 1.05rem;
   margin-bottom: 1rem;
   color: var(--primary);
 }

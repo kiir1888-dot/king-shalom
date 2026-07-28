@@ -73,21 +73,25 @@
           <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
           </button>
-          <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+          <div class="collapse navbar-collapse header-layout" id="navbarNav">
+            <ul class="navbar-nav header-nav mb-2 mb-lg-0">
               <li class="nav-item"><a class="nav-link active" href="#home">Home</a></li>
-              <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#about" id="aboutDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">About</a>
+                <ul class="dropdown-menu" aria-labelledby="aboutDropdown">
+                  <li><a class="dropdown-item" href="#why-us">Why Choose Us?</a></li>
+                  <li><a class="dropdown-item" href="#process">Process</a></li>
+                </ul>
+              </li>
               <li class="nav-item"><a class="nav-link" href="#team">Leadership</a></li>
               <li class="nav-item"><a class="nav-link" href="#services">Services</a></li>
-              <li class="nav-item"><a class="nav-link" href="#process">Process</a></li>
               <li class="nav-item"><a class="nav-link" href="#gallery">Gallery</a></li>
-              <li class="nav-item"><a class="nav-link" href="#why-us">Why Choose Us</a></li>
               <li class="nav-item"><a class="nav-link" href="#testimonials">Testimonials</a></li>
               <li class="nav-item"><a class="nav-link" href="#news">News</a></li>
               <li class="nav-item"><a class="nav-link" href="#faqs">FAQs</a></li>
               <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
             </ul>
-            <div class="navbar-actions d-flex align-items-center gap-2 ms-lg-3">
+            <div class="navbar-actions">
               <button
                 class="theme-toggle theme-toggle-small d-none d-lg-inline-flex"
                 type="button"
@@ -97,7 +101,6 @@
                 <i class="bi bi-moon-fill theme-icon theme-icon-moon" aria-hidden="true"></i>
                 <i class="bi bi-sun-fill theme-icon theme-icon-sun" aria-hidden="true"></i>
               </button>
-              <a href="admin-login.html" class="btn btn-admin-small"><i class="bi bi-lock"></i> Admin</a>
               <a href="#contact" class="btn btn-quote btn-quote-sm">Request Quote</a>
             </div>
           </div>
@@ -163,7 +166,7 @@
             </div>
             <div class="col-lg-6 reveal reveal-delay">
               <span class="eyebrow"><i class="bi bi-building"></i> About King’s Shalom</span>
-              <h2 class="section-title">Precision logistics backed by experience and integrity.</h2>
+              <h2 class="section-title">Precision logistics backed by experience and integrity</h2>
               <p class="section-copy">We bring together customs expertise, dependable transport coordination, and proactive cargo management to keep every shipment moving with confidence.</p>
               <div class="about-cards row g-3 mt-3">
                 <div class="col-md-6">
@@ -197,7 +200,7 @@
         <div class="container">
           <div class="section-heading reveal">
             <span class="eyebrow"><i class="bi bi-grid"></i> Services</span>
-            <h2 class="section-title">End-to-end freight and customs services.</h2>
+            <h2 class="section-title">End-to-end freight and customs services</h2>
             <p class="section-copy">Our services are designed for speed, compliance, and complete peace of mind from origin to destination.</p>
           </div>
           <div class="row g-4 mt-2">
@@ -252,7 +255,7 @@
           <div class="row g-5 align-items-center">
             <div class="col-lg-6 reveal">
               <span class="eyebrow"><i class="bi bi-award"></i> Why Choose Us</span>
-              <h2 class="section-title">Focused on reliability from first contact to final delivery.</h2>
+              <h2 class="section-title">Focused on reliability from first contact to final delivery</h2>
               <div class="why-list mt-4">
                 <div class="why-item">
                   <div class="why-icon"><i class="bi bi-person-workspace"></i></div>
@@ -297,7 +300,7 @@
         <div class="container">
           <div class="section-heading reveal">
             <span class="eyebrow"><i class="bi bi-signpost-split"></i> Process</span>
-            <h2 class="section-title">A clear, controlled process for every shipment.</h2>
+            <h2 class="section-title">A clear, controlled process for every shipment</h2>
           </div>
           <div class="timeline-wrap mt-5">
             <div class="timeline-step reveal">
@@ -333,7 +336,7 @@
         <div class="container">
           <div class="section-heading reveal">
             <span class="eyebrow"><i class="bi bi-diagram-3"></i> Industries We Serve</span>
-            <h2 class="section-title">Serving the sectors that keep trade moving.</h2>
+            <h2 class="section-title">Serving the sectors that keep trade moving</h2>
           </div>
           <div class="row g-4 mt-2">
             <div class="col-6 col-md-4 col-lg-3 reveal">
@@ -368,7 +371,7 @@
         <div class="container">
           <div class="section-heading reveal">
             <span class="eyebrow"><i class="bi bi-images"></i> Gallery</span>
-            <h2 class="section-title">A look at the operations behind every successful movement.</h2>
+            <h2 class="section-title">A look at the operations behind every successful movement</h2>
           </div>
           <div class="gallery-grid mt-4">
             <button class="gallery-card reveal" data-lightbox data-image="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=1200&q=80" aria-label="Open cargo handling view">
@@ -416,7 +419,7 @@
         <div class="container">
           <div class="section-heading reveal">
             <span class="eyebrow"><i class="bi bi-chat-quote"></i> Testimonials</span>
-            <h2 class="section-title">Trusted by partners who value dependable execution.</h2>
+            <h2 class="section-title">Trusted by partners who value dependable execution</h2>
           </div>
           <div id="testimonialCarousel" class="carousel slide mt-4 reveal" data-bs-ride="carousel">
             <div class="carousel-inner">
@@ -461,7 +464,7 @@
         <div class="container">
           <div class="section-heading reveal">
             <span class="eyebrow"><i class="bi bi-person-check"></i> Partners</span>
-            <h2 class="section-title">Organizations that trust our operational standards.</h2>
+            <h2 class="section-title">Organizations that trust our operational standards</h2>
           </div>
           <div class="row g-3 mt-3 align-items-center">
             <div class="col-6 col-md-3 reveal"><div class="partner-logo">NorthLink</div></div>
@@ -482,7 +485,7 @@
         <div class="container">
           <div class="section-heading reveal">
             <span class="eyebrow"><i class="bi bi-newspaper"></i> News &amp; Updates</span>
-            <h2 class="section-title">Latest from King's Shalom.</h2>
+            <h2 class="section-title">Latest from King's Shalom</h2>
             <p class="section-copy">Stay informed with company announcements, logistics industry updates, and service news.</p>
           </div>
           <div class="news-grid mt-4" id="homeNewsGrid">
@@ -499,7 +502,7 @@
         <div class="container">
           <div class="section-heading reveal">
             <span class="eyebrow"><i class="bi bi-question-circle"></i> FAQs</span>
-            <h2 class="section-title">Answers to common logistics questions.</h2>
+            <h2 class="section-title">Answers to common logistics questions</h2>
           </div>
           <div class="faq-list mt-4">
             <div class="faq-item reveal active">
@@ -550,7 +553,7 @@
           <div class="row g-5">
             <div class="col-lg-5 reveal">
               <span class="eyebrow"><i class="bi bi-envelope-open"></i> Contact</span>
-              <h2 class="section-title">Let’s move your freight with confidence.</h2>
+              <h2 class="section-title">Let’s move your freight with confidence</h2>
               <div class="contact-list mt-4">
                 <div class="contact-card">
                   <i class="bi bi-telephone"></i>
