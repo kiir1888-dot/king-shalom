@@ -25,6 +25,13 @@
       "dest": "/api/[...all].js"
     },
     {
+      "src": "/admin/?",
+      "headers": {
+        "Cache-Control": "no-cache, no-store, must-revalidate"
+      },
+      "dest": "/admin-login.html"
+    },
+    {
       "handle": "filesystem"
     }
   ]
