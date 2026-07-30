@@ -834,6 +834,12 @@ h6::marker {
   margin-bottom: 0.65rem;
 }
 
+/* ── Equal card description height ──────────────── */
+.team-description {
+  min-height: 5.1em;            /* ≈ 3 lines at 0.92rem × 1.7 line-height */
+  margin-bottom: 0;
+}
+
 @media (max-width: 576px) {
   .team-card img {
     height: 290px;
