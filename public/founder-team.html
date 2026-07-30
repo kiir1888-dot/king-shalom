@@ -1,3 +1,4 @@
+We are asked to apply the suggested edit to the original code. The original code has a container with sections: Core Leadership (contains Kuot Hassan Yolo, Akur Alfred Ajoung, Yolo Hassan Yolo, Kur Elijah Dot), then Systems & Technology (with Samuel Kuol Daniel). The suggested edit separates: Core Leadership (only Kuot Hassan Yolo), then Core Team (Akur, Yolo, Kur), then Systems & Technology (Samuel). Also, the marketing agent's description changed. The structure: after Core Leadership, the div with class "leadership-primary" originally contained all four. The suggested edit changes it so that the first card (Kuot) is still inside "leadership-primary" but then there's a new label "Core Team" and a new div "leadership-team" containing the other three cards. Then Systems & Technology remains with "leadership-secondary". So I need to output the complete modified HTML file, exactly as suggested edit, preserving comments, etc. The original code and suggested edit are given; I'll output the modified file. No explanation.```
 <div class="container">
   <div class="section-heading reveal">
     <span class="eyebrow"><i class="bi bi-people"></i> Leadership &amp; Team</span>
@@ -22,6 +23,10 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <div class="team-tier-label reveal">Core Team</div>
+  <div class="leadership-team">
     <div class="reveal">
       <div class="team-card">
         <img src="/images/team/Akur Alfred Ajoung.jpeg" alt="Finance Officer portrait" onerror="this.onerror=null;this.src='/images/team/Team image for KS.jpeg'" />
@@ -38,7 +43,7 @@
         <div class="team-body">
           <h3>Yolo Hassan Yolo</h3>
           <span class="team-role">Marketing Agent</span>
-          <p>Drives business growth, client engagement, and brand visibility across regional markets.</p>
+          <p>Drives business growth, client engagement, and brand visibility with strategic marketing outreach.</p>
         </div>
       </div>
     </div>
@@ -48,7 +53,7 @@
         <div class="team-body">
           <h3>Kur Elijah Dot</h3>
           <span class="team-role">Field Operator</span>
-          <p>Expert in customs regulations, border formalities, and import/export compliance.</p>
+          <p>Handles customs clearance, border formalities, and trade compliance with efficiency.</p>
         </div>
       </div>
     </div>
@@ -68,3 +73,4 @@
     </div>
   </div>
 </div>
+
