@@ -775,6 +775,9 @@ h6::marker {
 }
 
 .team-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   overflow: hidden;
   transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
@@ -802,7 +805,7 @@ h6::marker {
   height: 320px;
   width: 100%;
   object-fit: cover;
-  object-position: center 15%;
+  object-position: center;
 }
 
 .team-card--featured img {
@@ -811,6 +814,9 @@ h6::marker {
 }
 
 .team-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
   padding: 1.2rem;
 }
 
@@ -835,8 +841,9 @@ h6::marker {
 }
 
 /* ── Equal card description height ──────────────── */
-.team-description {
-  min-height: 5.1em;            /* ≈ 3 lines at 0.92rem × 1.7 line-height */
+.team-body p {
+  flex: 1;
+  min-height: 5.1em;
   margin-bottom: 0;
 }
 
