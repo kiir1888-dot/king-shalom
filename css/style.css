@@ -762,13 +762,6 @@ h6::marker {
   margin-top: 1.5rem;
 }
 
-.leadership-team {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1.5rem;
-  margin-top: 1.5rem;
-}
-
 .leadership-secondary {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -777,7 +770,6 @@ h6::marker {
 }
 
 .leadership-primary > *,
-.leadership-team > *,
 .leadership-secondary > * {
   min-width: 0;
 }
@@ -797,12 +789,12 @@ h6::marker {
 .team-featured-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.2rem;
+  gap: 0.25rem;
   background: var(--secondary);
   color: var(--primary);
-  font-size: 0.52rem;
+  font-size: 0.62rem;
   font-weight: 700;
-  padding: 0.12rem 0.4rem;
+  padding: 0.2rem 0.5rem;
   border-radius: 999px;
   letter-spacing: 0;
   line-height: 1.2;
@@ -890,11 +882,7 @@ h6::marker {
     box-shadow: none;
   }
 
-    .leadership-primary {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .leadership-team {
+  .leadership-primary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -905,10 +893,6 @@ h6::marker {
 
 @media (max-width: 576px) {
   .leadership-primary {
-    grid-template-columns: 1fr;
-  }
-
-  .leadership-team {
     grid-template-columns: 1fr;
   }
 
