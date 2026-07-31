@@ -147,9 +147,56 @@ function renderHomepageNews(newsList) {
   });
 }
 
+// Hardcoded fallback news — shows when API is unreachable (e.g., no Supabase configured on Vercel)
+const FALLBACK_NEWS = [
+  {
+    id: 1,
+    title: "King's Shalom Expands Customs Clearance Operations in East Africa",
+    description: "We are proud to announce the expansion of our customs clearance services to additional border points across South Sudan and neighbouring East African trade corridors.",
+    category: 'Company News',
+    author: 'Kuot Hassan Yolo',
+    date: '2026-06-15',
+    imageUrl: '',
+    createdAt: '2026-06-15T10:00:00.000Z',
+    updatedAt: '2026-06-15T10:00:00.000Z',
+  },
+  {
+    id: 2,
+    title: 'New Transport Coordination Service Launched',
+    description: "King's Shalom introduces a dedicated transport coordination desk to help clients manage last-mile delivery and route planning with real-time updates.",
+    category: 'Company News',
+    author: 'Yolo Hassan Yolo',
+    date: '2026-05-28',
+    imageUrl: '',
+    createdAt: '2026-05-28T08:30:00.000Z',
+    updatedAt: '2026-05-28T08:30:00.000Z',
+  },
+  {
+    id: 3,
+    title: 'South Sudan Customs Authority Updates Import Documentation Requirements',
+    description: 'Stay informed on the latest regulatory changes affecting import documentation. Our team is ready to assist clients with the updated compliance procedures.',
+    category: 'Regulatory Update',
+    author: 'Kur Elijah Dot',
+    date: '2026-05-10',
+    imageUrl: '',
+    createdAt: '2026-05-10T12:00:00.000Z',
+    updatedAt: '2026-05-10T12:00:00.000Z',
+  },
+];
+
 // Main initialization
 async function initializeNews() {
-  const newsData = await fetchNewsData();
+  // Try API first, fall back to hardcoded news if it fails
+  let newsData = [];
+  try {
+    newsData = await fetchNewsData();
+  } catch {
+    console.warn('News API unreachable, using fallback content.');
+  }
+
+  if (newsData.length === 0) {
+    newsData = FALLBACK_NEWS;
+  }
   
   if (newsData.length === 0) {
     const homeContainer = document.getElementById('homeNewsGrid');
