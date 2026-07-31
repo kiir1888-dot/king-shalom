@@ -525,21 +525,36 @@ app.get('/api/news', async (req, res) => {
   });
 
   if (IS_VERCEL) {
-    if (!newsSupabase) {
-      return res.status(503).json({ success: false, message: 'News storage is not configured.' });
-    }
+      if (newsSupabase) {
+        const { data, error } = await newsSupabase
+          .from('news')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-    const { data, error } = await newsSupabase
-      .from('news')
-      .select('*')
-      .order('created_at', { ascending: false });
+        if (!error) {
+          return res.json({ success: true, data: data.map(mapNewsRow) });
+        }
 
-    if (error) {
-      return res.status(500).json({ success: false, message: error.message });
-    }
+        console.error('Supabase news fetch failed, falling back to local file:', error.message);
+      }
 
-    return res.json({ success: true, data: data.map(mapNewsRow) });
-  }
+      // Fallback to JSON file on Vercel when Supabase is unavailable
+          let items = loadNewsFromFile();
+          if (items.length === 0) {
+            const projectNewsPath = path.join(__dirname, 'data', 'news.json');
+            if (fs.existsSync(projectNewsPath)) {
+              try {
+                items = JSON.parse(fs.readFileSync(projectNewsPath, 'utf8'));
+                // Persist into /tmp for subsequent writes
+                fs.writeFileSync(NEWS_FILE, JSON.stringify(items, null, 2));
+              } catch {
+                items = [];
+              }
+            }
+          }
+          items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          return res.json({ success: true, data: items });
+        }
 
   if (!sqliteAvailable || !db) {
     const items = loadNewsFromFile().sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -564,22 +579,40 @@ app.post('/api/news', requireAdminAuth, requireCsrfHeader, async (req, res) => {
   }
 
   if (IS_VERCEL) {
-    if (!newsSupabase) {
-      return res.status(503).json({ success: false, message: 'News storage is not configured.' });
+      if (newsSupabase) {
+        const { data, error } = await newsSupabase
+          .from('news')
+          .insert({ title, description, category, author, date, image_url: imageUrl || '' })
+          .select('id')
+          .single();
+
+        if (!error && data) {
+          return res.json({ success: true, message: 'News added', id: data.id });
+        }
+
+        console.error('Supabase news insert failed, falling back to local file:', error?.message);
+      }
+
+      // JSON file fallback on Vercel
+      const items = loadNewsFromFile();
+      const now = new Date().toISOString();
+      const nextId = items.length ? Math.max(...items.map((item) => Number(item.id) || 0)) + 1 : 1;
+      const record = {
+        id: nextId,
+        title,
+        description,
+        category,
+        author,
+        date,
+        imageUrl: imageUrl || '',
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      items.unshift(record);
+      saveNewsToFile(items);
+      return res.json({ success: true, message: 'News added', id: nextId });
     }
-
-    const { data, error } = await newsSupabase
-      .from('news')
-      .insert({ title, description, category, author, date, image_url: imageUrl || '' })
-      .select('id')
-      .single();
-
-    if (error) {
-      return res.status(500).json({ success: false, message: error.message });
-    }
-
-    return res.json({ success: true, message: 'News added', id: data.id });
-  }
 
   if (!sqliteAvailable || !db) {
     const items = loadNewsFromFile();
