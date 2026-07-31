@@ -19,8 +19,19 @@ const DB_FILE = path.join(DATA_DIR, 'news.db');
 const NEWS_FILE = path.join(DATA_DIR, 'news.json');
 const DASHBOARD_FILE = path.join(__dirname, 'dashboard.html');
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
-const SESSION_TTL_SECONDS = Number(process.env.ADMIN_SESSION_TTL_SECONDS || 60 * 60 * 8);
-const SESSION_SECRET = process.env.SESSION_SECRET || (IS_PRODUCTION ? '' : crypto.randomBytes(32).toString('base64url'));
+const SESSION_TTL_SECONDS = Math.min(
+  Number(process.env.ADMIN_SESSION_TTL_SECONDS || 60 * 60 * 8),
+  86400, // Max 24 hours
+);
+
+if (IS_PRODUCTION && !process.env.SESSION_SECRET) {
+  console.error('[security] FATAL: SESSION_SECRET must be set in production.');
+  process.exit(1);
+}
+
+const SESSION_SECRET = IS_PRODUCTION
+  ? process.env.SESSION_SECRET
+  : (process.env.SESSION_SECRET || crypto.randomBytes(32).toString('base64url'));
 const ADMIN_COOKIE_NAME = IS_PRODUCTION ? '__Host-ks_admin' : 'ks_admin';
 const LEGACY_VERIFICATION_ACCESS_COOKIE_NAME = IS_PRODUCTION ? '__Host-ks_verify_access' : 'ks_verify_access';
 const LEGACY_VERIFICATION_REFRESH_COOKIE_NAME = IS_PRODUCTION ? '__Host-ks_verify_refresh' : 'ks_verify_refresh';
@@ -272,6 +283,11 @@ const recoveryRateLimit = createRateLimiter({
   maxAttempts: 3,
   key: (req) => `recovery:${getClientIp(req)}:${normalizeEmail(req.body?.email)}`,
 });
+const contactRateLimit = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  maxAttempts: 5,
+  key: (req) => `contact:${getClientIp(req)}`,
+});
 
 const requireCsrfHeader = (req, res, next) => {
   if (req.get('X-KS-CSRF') !== '1') {
@@ -391,6 +407,52 @@ const saveMessage = (message) => {
   const messages = loadMessages();
   messages.unshift(message);
   fs.writeFileSync(DATA_FILE, JSON.stringify(messages, null, 2));
+};
+
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5MB
+const ALLOWED_IMAGE_MIME_TYPES = new Set([
+  'image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif',
+]);
+
+const validateDataUrlImage = (dataUrl) => {
+  if (!dataUrl || typeof dataUrl !== 'string') {
+    return true;
+  }
+
+  if (!dataUrl.startsWith('data:image/')) {
+    return false;
+  }
+
+  const mimeMatch = dataUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,/);
+  if (!mimeMatch || !ALLOWED_IMAGE_MIME_TYPES.has(mimeMatch[1])) {
+    return false;
+  }
+
+  const base64Body = dataUrl.split(',')[1];
+  if (!base64Body) {
+    return false;
+  }
+
+  const decodedSize = Math.ceil((base64Body.length * 3) / 4);
+  return decodedSize <= MAX_IMAGE_BYTES;
+};
+
+const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || ''));
+
+const MAX_CONTACT_FIELD_LENGTH = {
+  name: 100,
+  email: 254,
+  phone: 30,
+  service: 100,
+  message: 3000,
+};
+
+const sanitizeString = (value) => {
+  if (typeof value !== 'string') return '';
+  return value
+    .replace(/[\r\n]+/g, ' ')
+    .replace(/[<>]/g, '')
+    .trim();
 };
 
 const sendEmail = async (message) => {
@@ -843,3 +905,4 @@ if (!IS_VERCEL) {
 }
 
 export default app;
+
