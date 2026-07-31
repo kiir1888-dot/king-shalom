@@ -116,9 +116,19 @@ h6::marker {
   content: '';
 }
 
+.site-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1030;
+}
+
 .navbar {
   padding: 1rem 0;
-  transition: background 0.25s ease, box-shadow 0.25s ease, padding 0.25s ease;
+  background: transparent;
+  backdrop-filter: blur(0px);
+  transition: background 0.3s ease, backdrop-filter 0.3s ease, box-shadow 0.3s ease, padding 0.3s ease;
 }
 
 .navbar > .container,
@@ -145,8 +155,10 @@ h6::marker {
 }
 
 .navbar.scrolled {
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 12px 35px rgba(10, 46, 93, 0.08);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 8px 32px rgba(10, 46, 93, 0.1);
   padding: 0.6rem 0;
 }
 
@@ -775,9 +787,11 @@ h6::marker {
 }
 
 .team-card {
-  overflow: hidden;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-}
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
 
 .team-card--featured {
   position: relative;
@@ -1834,8 +1848,10 @@ h6::marker {
 }
 
 [data-theme='dark'] .navbar.scrolled {
-  background: rgba(18, 31, 48, 0.96);
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
+  background: rgba(18, 31, 48, 0.82);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
 }
 
 [data-theme='dark'] .navbar.scrolled .nav-link {
