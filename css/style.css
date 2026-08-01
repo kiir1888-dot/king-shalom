@@ -670,10 +670,6 @@ img {
 }
 
 .team-featured-badge {
-  position: absolute;
-  bottom: 5.4rem;
-  left: 1.5rem;
-  z-index: 2;
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -684,6 +680,7 @@ img {
   padding: 0.35rem 0.85rem;
   border-radius: 999px;
   letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
 }
 
 .team-card img {
